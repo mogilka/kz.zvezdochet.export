@@ -26,7 +26,9 @@ import kz.zvezdochet.analytics.bean.TextGenderReference;
 import kz.zvezdochet.analytics.bean.Zone;
 import kz.zvezdochet.analytics.service.AnalyticsService;
 import kz.zvezdochet.analytics.service.CardTypeService;
+import kz.zvezdochet.analytics.service.CategoryService;
 import kz.zvezdochet.analytics.service.DegreeService;
+import kz.zvezdochet.analytics.service.ElementService;
 import kz.zvezdochet.analytics.service.PlanetAspectService;
 import kz.zvezdochet.analytics.service.PlanetHouseService;
 import kz.zvezdochet.analytics.util.AnalyticsUtil;
@@ -36,7 +38,7 @@ import kz.zvezdochet.bean.House;
 import kz.zvezdochet.bean.Planet;
 import kz.zvezdochet.bean.Sign;
 import kz.zvezdochet.bean.SkyPointAspect;
-import kz.zvezdochet.core.bean.BaseEntity;
+import kz.zvezdochet.core.bean.Base;
 import kz.zvezdochet.core.util.CoreUtil;
 import kz.zvezdochet.core.util.DateUtil;
 import kz.zvezdochet.core.util.PlatformUtil;
@@ -45,6 +47,9 @@ import kz.zvezdochet.export.bean.Bar;
 import kz.zvezdochet.export.service.ExportService;
 import kz.zvezdochet.export.util.EventStatistics;
 import kz.zvezdochet.export.util.HTMLUtil;
+import kz.zvezdochet.service.AspectTypeService;
+import kz.zvezdochet.service.HouseService;
+import kz.zvezdochet.service.SignService;
 import kz.zvezdochet.util.AstroUtil;
 
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -52,7 +57,7 @@ import org.eclipse.swt.widgets.Display;
 
 /**
  * Генератор HTML-файлов для экспорта данных
- * @author nataly
+ * @author Nataly Didenko
  *
  */
 @SuppressWarnings("unchecked")
@@ -187,7 +192,7 @@ public class HTMLExporter {
 	private void generateHouseInSigns(Event event, Tag cell, Map<String, Double> houseMap) {
 		if (event.getConfiguration().getHouses() == null) return;
 		try {
-			for (BaseEntity hentity : event.getConfiguration().getHouses()) {
+			for (Base hentity : event.getConfiguration().getHouses()) {
 				House house = (House)hentity;
 				//Определяем количество планет в доме
 				if (houseMap.get(house.getCode()) != null) continue;
@@ -227,11 +232,11 @@ public class HTMLExporter {
 	private void generatePlanetInHouses(Event event, Tag cell, Map<String, Double> houseMap) {
 		if (event.getConfiguration().getHouses() == null) return;
 		try {
-			for (BaseEntity hentity : event.getConfiguration().getHouses()) {
+			for (Base hentity : event.getConfiguration().getHouses()) {
 				House house = (House)hentity;
 				//Определяем количество планет в доме
 				List<Planet> planets = new ArrayList<Planet>();
-				for (BaseEntity pentity : event.getConfiguration().getPlanets()) {
+				for (Base pentity : event.getConfiguration().getPlanets()) {
 					Planet planet = (Planet)pentity;
 					if (planet.getHouse().equals(house))
 						planets.add(planet);
@@ -281,7 +286,7 @@ public class HTMLExporter {
 			
 			tr = new Tag("tr");
 			td = new Tag("td");
-			for (BaseEntity entity : event.getConfiguration().getPlanets()) {
+			for (Base entity : event.getConfiguration().getPlanets()) {
 				Planet planet = (Planet)entity;
 				if (planet.isPerfect() && planet.getStrongText() != null) {
 					td.add(HTMLUtil.getBoldTaggedString(planet.getName() + " (сила)"));
@@ -353,11 +358,11 @@ public class HTMLExporter {
 	 */
 	private void generateAspectTypes(Event event, Tag cell) {
 		try {
-			List<BaseEntity> planets = event.getConfiguration().getPlanets();
+			List<Base> planets = event.getConfiguration().getPlanets();
 			//фильтрация списка типов аспектов
-			List<BaseEntity> aspectTypes = AspectType.getService().getList();
+			List<Base> aspectTypes = new AspectTypeService().getList();
 			List<AspectType> types = new ArrayList<AspectType>();
-		    for (BaseEntity entity : aspectTypes) {
+		    for (Base entity : aspectTypes) {
 		    	AspectType type = (AspectType)entity;
 		    	if (type.getCode() != null &&
 		    			!type.getCode().equals("COMMON") &&
@@ -371,8 +376,8 @@ public class HTMLExporter {
 		    	Bar bar = new Bar();
 		    	bar.setName(type.getName());
 		    	int value = 0;
-		    	for (BaseEntity baseEntity : planets) {
-		    		Planet planet = (Planet)baseEntity;
+		    	for (Base entity : planets) {
+		    		Planet planet = (Planet)entity;
 					value += planet.getAspectCountMap().get(type.getCode());
 		    	}
 		    	bar.setValue(value / 2);
@@ -761,7 +766,7 @@ public class HTMLExporter {
 			    while (iterator.hasNext()) {
 			    	Entry<String, Double> entry = iterator.next();
 			    	Bar bar = new Bar();
-			    	Sign element = (Sign)Sign.getService().getEntityByCode(entry.getKey());
+			    	Sign element = (Sign)new SignService().getEntityByCode(entry.getKey());
 			    	bar.setName(element.getDiaName());
 			    	bar.setValue(entry.getValue());
 			    	bar.setColor(element.getColor());
@@ -814,7 +819,7 @@ public class HTMLExporter {
 			    	Entry<String, Double> entry = iterator.next();
 			    	Bar bar = new Bar();
 					//по индексу трети определяем дом, в котором она находится
-			    	House element = (House)House.getService().getEntityByCode(entry.getKey());
+			    	House element = (House)new HouseService().getEntityByCode(entry.getKey());
 			    	bar.setName(element.getDiaName());
 			    	bar.setValue(entry.getValue());
 			    	bar.setColor(element.getColor());
@@ -1053,8 +1058,8 @@ public class HTMLExporter {
 			Tag b = new Tag("b");
 			b.add("Характеристика личности");
 			td.add(b);
-			List<BaseEntity> list = Category.getService().getList();
-			for (BaseEntity entity : list) {
+			List<Base> list = new CategoryService().getList();
+			for (Base entity : list) {
 				Category category = (Category)entity;
 				td.add(new Tag("/br"));
 				Tag a = new Tag("a", "href=#" + category.getCode());
@@ -1089,8 +1094,8 @@ public class HTMLExporter {
 			b = new Tag("b");
 			b.add("Реализация личности");
 			td.add(b);
-			list = House.getService().getList();
-			for (BaseEntity entity : list) {
+			list = new HouseService().getList();
+			for (Base entity : list) {
 				House house = (House)entity;
 				td.add(new Tag("/br"));
 				Tag a = new Tag("a", "href=#" + house.getLinkName());
@@ -1128,7 +1133,7 @@ public class HTMLExporter {
 				td.add(HTMLUtil.getNormalTaggedString("В один день с вами родились такие известные люди:"));
 				Tag p = new Tag("p");
 				
-				for (BaseEntity entity : list) {
+				for (Base entity : list) {
 					Event event = (Event)entity;
 					p.add(HTMLUtil.getSmallTaggedString(DateUtil.formatDate(event.getBirth())));
 					p.add(HTMLUtil.getBoldTaggedSubstring(event.getName() + " " + event.getSurname()));
@@ -1168,7 +1173,7 @@ public class HTMLExporter {
 		    	i++;
 		    	Entry<String, Double> entry = iterator.next();
 		    	Bar bar = new Bar();
-		    	Sign sign = (Sign)Sign.getService().getEntityByCode(entry.getKey());
+		    	Sign sign = (Sign)new SignService().getEntityByCode(entry.getKey());
 		    	bar.setName(sign.getName());
 		    	bar.setValue(entry.getValue());
 		    	bar.setColor(sign.getColor());
@@ -1270,7 +1275,7 @@ public class HTMLExporter {
 				House house = (House)event.getConfiguration().getHouses().get(0);
 				if (house == null) return;
 				int value = (int)house.getCoord();
-				BaseEntity entity = new DegreeService().getEntityById(new Long(String.valueOf(value)));
+				Base entity = new DegreeService().find(new Long(String.valueOf(value)));
 			    if (entity != null) {
 			    	TextGenderReference degree = (TextGenderReference)entity;
 					Tag tr = new Tag("tr");
@@ -1312,7 +1317,7 @@ public class HTMLExporter {
 	private void generatePlanetsInSigns(Event event, Tag cell) {
 		try {
 			if (event.getConfiguration().getPlanets() != null) {
-				for (BaseEntity entity : event.getConfiguration().getPlanets()) {
+				for (Base entity : event.getConfiguration().getPlanets()) {
 					Planet planet = (Planet)entity;
 				    if (planet.isMain()) {
 				    	List<Object> list = new ExportService().getPlanetInSignText(planet, planet.getSign());
@@ -1491,7 +1496,7 @@ public class HTMLExporter {
 					}
 			
 				if (type.length() > 0) {
-				    BaseEntity entity = new CardTypeService().getEntityByCode(type);
+				    Base entity = new CardTypeService().getEntityByCode(type);
 				    if (entity != null) {
 				    	TextGenderReference cardType = (TextGenderReference)entity;
 						Tag tr = new Tag("tr");
@@ -1554,7 +1559,7 @@ public class HTMLExporter {
 		    	bars[i] = bar;
 		    }
 		    Element element = null;
-		    for (BaseEntity entity : Element.getService().getList()) {
+		    for (Base entity : new ElementService().getList()) {
 		    	element = (Element)entity;
 		    	String[] codes = element.getCode().split("_");
 		    	if (codes.length == elements.length) {

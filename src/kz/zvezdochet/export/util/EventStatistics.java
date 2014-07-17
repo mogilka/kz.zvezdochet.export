@@ -9,16 +9,17 @@ import kz.zvezdochet.analytics.util.AnalyticsUtil;
 import kz.zvezdochet.bean.House;
 import kz.zvezdochet.bean.Planet;
 import kz.zvezdochet.bean.Sign;
-import kz.zvezdochet.core.bean.BaseEntity;
+import kz.zvezdochet.core.bean.Base;
 import kz.zvezdochet.core.service.DataAccessException;
 import kz.zvezdochet.core.util.CoreUtil;
 import kz.zvezdochet.service.HouseService;
+import kz.zvezdochet.service.SignService;
 import kz.zvezdochet.util.AstroUtil;
 import kz.zvezdochet.util.Configuration;
 
 /**
  * Класс, представляющий набор статистических данных события
- * @author nataly
+ * @author Nataly Didenko
  *
  */
 public class EventStatistics {
@@ -54,7 +55,7 @@ public class EventStatistics {
 		if (conf.getPlanets() != null) {
 			planetSigns = new HashMap<String, Double>();
 			signPlanets = new HashMap<String, Integer>();
-			for (BaseEntity entity : conf.getPlanets()) {
+			for (Base entity : conf.getPlanets()) {
 				Planet planet = (Planet)entity;
 
 				if (main && !planet.isMain()) continue;
@@ -80,7 +81,7 @@ public class EventStatistics {
 	public void initPlanetHouses() throws DataAccessException {
 		if (conf.getPlanets() != null) {
 			planetHouses = new HashMap<String, Double>();
-			for (BaseEntity entity : conf.getPlanets()) {
+			for (Base entity : conf.getPlanets()) {
 				Planet planet = (Planet)entity;
 				for (int i = 0; i < conf.getHouses().size(); i++) {
 					House house1 = (House)conf.getHouses().get(i);
@@ -107,7 +108,7 @@ public class EventStatistics {
 	 * @throws DataAccessException 
 	 */
 	public House getHouse(String code) throws DataAccessException {
-		for (BaseEntity entity : conf.getHouses())
+		for (Base entity : conf.getHouses())
 			if (((House)entity).getCode().equals(code))
 				return (House)entity;
 		return null;
@@ -130,7 +131,7 @@ public class EventStatistics {
 			Iterator<Map.Entry<String, Double>> iterator = planetSigns.entrySet().iterator();
 		    while (iterator.hasNext()) {
 		    	Entry<String, Double> entry = iterator.next();
-		    	Sign sign = (Sign)Sign.getService().getEntityByCode(entry.getKey());
+		    	Sign sign = (Sign)new SignService().getEntityByCode(entry.getKey());
 				double value = 0.0;
 				
 				//выделенность стихий
@@ -244,7 +245,7 @@ public class EventStatistics {
 			Iterator<Map.Entry<String, Double>> iterator = planetHouses.entrySet().iterator();
 		    while (iterator.hasNext()) {
 		    	Entry<String, Double> entry = iterator.next();
-		    	House house = (House)House.getService().getEntityByCode(entry.getKey());
+		    	House house = (House)new HouseService().getEntityByCode(entry.getKey());
 				double value = 0.0;
 				
 				//выделенность стихий
@@ -338,17 +339,18 @@ public class EventStatistics {
 		Map<String, Double> houses = new HashMap<String, Double>();
 		if (planetHouses != null) {
 			Iterator<Map.Entry<String, Double>> iterator = planetHouses.entrySet().iterator();
+			HouseService service = new HouseService();
 		    while (iterator.hasNext()) {
 		    	Entry<String, Double> entry = iterator.next();
 				//по индексу трети определяем дом, в котором она находится
-		    	House house = (House)House.getService().getEntityByCode(entry.getKey());
+		    	House house = (House)service.getEntityByCode(entry.getKey());
 				double value = entry.getValue();
 				int index;
 				if (CoreUtil.isArrayContainsNumber(new int[] {1,4,7,10,13,16,19,22,25,28,31,34}, house.getNumber()))
 					index = house.getNumber();
 				else
 					index = (house.getNumber() % 3 == 0) ? house.getNumber() - 2 : house.getNumber() - 1;
-		    	house = ((HouseService)House.getService()).getHouse(index);
+		    	house = service.getHouse(index);
 
 				Object object = houses.get(house.getCode());
 				if (object != null)

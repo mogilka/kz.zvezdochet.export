@@ -12,10 +12,11 @@ import javax.xml.parsers.ParserConfigurationException;
 import kz.zvezdochet.bean.House;
 import kz.zvezdochet.bean.Planet;
 import kz.zvezdochet.bean.Sign;
-import kz.zvezdochet.core.bean.BaseEntity;
+import kz.zvezdochet.core.bean.Base;
 import kz.zvezdochet.core.service.DataAccessException;
 import kz.zvezdochet.core.util.PlatformUtil;
 import kz.zvezdochet.export.Activator;
+import kz.zvezdochet.service.SignService;
 import kz.zvezdochet.util.Configuration;
 
 import org.apache.xml.serialize.OutputFormat;
@@ -26,7 +27,7 @@ import org.w3c.dom.Element;
 /**
  * Генератор XML-файла для экспорта данных.
  * Экспортируемые данные используются для генерации flash-изображения
- * @author nataly
+ * @author Nataly Didenko
  *
  */
 public class XMLExporter {
@@ -62,7 +63,7 @@ public class XMLExporter {
 	private void exportHouses(Document document, Element root, Configuration conf) {
 		Element houses = document.createElement("sets");
 		int count = 0;
-		for (BaseEntity house : conf.getHouses()) {
+		for (Base house : conf.getHouses()) {
 			Element element = document.createElement("set");
 			element.appendChild(document.createTextNode(((House)house).getCode()));
 			element.setAttribute("id", String.valueOf(count++));
@@ -76,7 +77,7 @@ public class XMLExporter {
 	private void exportPlanets(Document document, Element root, Configuration conf) {
 		Element planets = document.createElement("sets");
 		int count = 0;
-		for (BaseEntity planet : conf.getPlanets()) {
+		for (Base planet : conf.getPlanets()) {
 			Element element = document.createElement("set");
 			element.appendChild(document.createTextNode(((Planet)planet).getCode()));
 			element.setAttribute("id", String.valueOf(count++));
@@ -88,10 +89,10 @@ public class XMLExporter {
 	}
 	
 	private void exportSigns(Document document, Element root, Configuration conf) throws DataAccessException {
-		List<BaseEntity> signlist = Sign.getService().getList();
+		List<Base> signlist = new SignService().getList();
 		Element signs = document.createElement("sets");
 		int count = 0;
-		for (BaseEntity sign : signlist) {
+		for (Base sign : signlist) {
 			Element element = document.createElement("set");
 			element.appendChild(document.createTextNode(((Sign)sign).getCode()));
 			element.setAttribute("id", String.valueOf(count++));

@@ -14,7 +14,7 @@ import kz.zvezdochet.core.tool.Connector;
 
 /**
  * Класс, обеспечивающий взаимодействие с БД
- * @author nataly
+ * @author Nataly Didenko
  */
 public class ExportService {
 

@@ -6,7 +6,7 @@ import kz.zvezdochet.export.bean.Bar;
 
 /**
  * Класс, предоставляющий вспомогательные методы для html-экспорта
- * @author nataly
+ * @author Nataly Didenko
  *
  */
 @SuppressWarnings("unchecked")
