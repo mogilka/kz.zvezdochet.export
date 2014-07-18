@@ -131,7 +131,7 @@ public class EventStatistics {
 			Iterator<Map.Entry<String, Double>> iterator = planetSigns.entrySet().iterator();
 		    while (iterator.hasNext()) {
 		    	Entry<String, Double> entry = iterator.next();
-		    	Sign sign = (Sign)new SignService().getEntityByCode(entry.getKey());
+		    	Sign sign = (Sign)new SignService().find(entry.getKey());
 				double value = 0.0;
 				
 				//выделенность стихий
@@ -245,7 +245,7 @@ public class EventStatistics {
 			Iterator<Map.Entry<String, Double>> iterator = planetHouses.entrySet().iterator();
 		    while (iterator.hasNext()) {
 		    	Entry<String, Double> entry = iterator.next();
-		    	House house = (House)new HouseService().getEntityByCode(entry.getKey());
+		    	House house = (House)new HouseService().find(entry.getKey());
 				double value = 0.0;
 				
 				//выделенность стихий
@@ -343,7 +343,7 @@ public class EventStatistics {
 		    while (iterator.hasNext()) {
 		    	Entry<String, Double> entry = iterator.next();
 				//по индексу трети определяем дом, в котором она находится
-		    	House house = (House)service.getEntityByCode(entry.getKey());
+		    	House house = (House)service.find(entry.getKey());
 				double value = entry.getValue();
 				int index;
 				if (CoreUtil.isArrayContainsNumber(new int[] {1,4,7,10,13,16,19,22,25,28,31,34}, house.getNumber()))

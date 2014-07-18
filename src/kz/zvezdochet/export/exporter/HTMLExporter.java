@@ -766,7 +766,7 @@ public class HTMLExporter {
 			    while (iterator.hasNext()) {
 			    	Entry<String, Double> entry = iterator.next();
 			    	Bar bar = new Bar();
-			    	Sign element = (Sign)new SignService().getEntityByCode(entry.getKey());
+			    	Sign element = (Sign)new SignService().find(entry.getKey());
 			    	bar.setName(element.getDiaName());
 			    	bar.setValue(entry.getValue());
 			    	bar.setColor(element.getColor());
@@ -819,7 +819,7 @@ public class HTMLExporter {
 			    	Entry<String, Double> entry = iterator.next();
 			    	Bar bar = new Bar();
 					//по индексу трети определяем дом, в котором она находится
-			    	House element = (House)new HouseService().getEntityByCode(entry.getKey());
+			    	House element = (House)new HouseService().find(entry.getKey());
 			    	bar.setName(element.getDiaName());
 			    	bar.setValue(entry.getValue());
 			    	bar.setColor(element.getColor());
@@ -1173,7 +1173,7 @@ public class HTMLExporter {
 		    	i++;
 		    	Entry<String, Double> entry = iterator.next();
 		    	Bar bar = new Bar();
-		    	Sign sign = (Sign)new SignService().getEntityByCode(entry.getKey());
+		    	Sign sign = (Sign)new SignService().find(entry.getKey());
 		    	bar.setName(sign.getName());
 		    	bar.setValue(entry.getValue());
 		    	bar.setColor(sign.getColor());
@@ -1496,7 +1496,7 @@ public class HTMLExporter {
 					}
 			
 				if (type.length() > 0) {
-				    Base entity = new CardTypeService().getEntityByCode(type);
+				    Base entity = new CardTypeService().find(type);
 				    if (entity != null) {
 				    	TextGenderReference cardType = (TextGenderReference)entity;
 						Tag tr = new Tag("tr");
