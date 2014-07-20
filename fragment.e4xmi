@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="ASCII"?>
+<fragment:ModelFragments xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:commands="http://www.eclipse.org/ui/2010/UIModel/application/commands" xmlns:fragment="http://www.eclipse.org/ui/2010/UIModel/fragment" xmlns:menu="http://www.eclipse.org/ui/2010/UIModel/application/ui/menu" xmi:id="_BaMloBAAEeS4S_D1UKf6fg">
+  <fragments xsi:type="fragment:StringModelFragment" xmi:id="_DTykgBAAEeS4S_D1UKf6fg" featurename="commands" parentElementId="org.eclipse.e4.ide.application">
+    <elements xsi:type="commands:Command" xmi:id="_EdRVEBAAEeS4S_D1UKf6fg" elementId="kz.zvezdochet.export.command.horoscope" commandName="exportCommand"/>
+  </fragments>
+  <fragments xsi:type="fragment:StringModelFragment" xmi:id="_KY1UkBAAEeS4S_D1UKf6fg" featurename="handlers" parentElementId="org.eclipse.e4.ide.application">
+    <elements xsi:type="commands:Handler" xmi:id="_PWEqoBAAEeS4S_D1UKf6fg" elementId="kz.zvezdochet.export.handler.horoscope" contributionURI="bundleclass://kz.zvezdochet.export/kz.zvezdochet.export.handler.ExportHandler" command="_EdRVEBAAEeS4S_D1UKf6fg"/>
+  </fragments>
+  <fragments xsi:type="fragment:StringModelFragment" xmi:id="_XPSpoBAAEeS4S_D1UKf6fg" featurename="children" parentElementId="kz.zvezdochet.toolbar.event">
+    <elements xsi:type="menu:HandledToolItem" xmi:id="_aAg0EBAAEeS4S_D1UKf6fg" elementId="kz.zvezdochet.export.handledtoolitem.horoscope" label="&#x42d;&#x43a;&#x441;&#x43f;&#x43e;&#x440;&#x442; &#x433;&#x43e;&#x440;&#x43e;&#x441;&#x43a;&#x43e;&#x43f;&#x430;" iconURI="platform:/plugin/kz.zvezdochet.export/icons/export.gif" command="_EdRVEBAAEeS4S_D1UKf6fg"/>
+  </fragments>
+  <fragments xsi:type="fragment:StringModelFragment" xmi:id="_ASzM0BANEeS4S_D1UKf6fg" featurename="children" parentElementId="org.eclipse.ui.main.menu">
+    <elements xsi:type="menu:HandledMenuItem" xmi:id="_FcJsQBANEeS4S_D1UKf6fg" elementId="kz.zvezdochet.export.handledmenuitem.horoscope" label="&#x42d;&#x43a;&#x441;&#x43f;&#x43e;&#x440;&#x442; &#x433;&#x43e;&#x440;&#x43e;&#x441;&#x43a;&#x43e;&#x43f;&#x430;" iconURI="" command="_EdRVEBAAEeS4S_D1UKf6fg"/>
+  </fragments>
+</fragment:ModelFragments>

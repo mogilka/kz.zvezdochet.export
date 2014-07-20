@@ -38,7 +38,7 @@ import kz.zvezdochet.bean.House;
 import kz.zvezdochet.bean.Planet;
 import kz.zvezdochet.bean.Sign;
 import kz.zvezdochet.bean.SkyPointAspect;
-import kz.zvezdochet.core.bean.Base;
+import kz.zvezdochet.core.bean.Model;
 import kz.zvezdochet.core.util.CoreUtil;
 import kz.zvezdochet.core.util.DateUtil;
 import kz.zvezdochet.core.util.PlatformUtil;
@@ -62,9 +62,14 @@ import org.eclipse.swt.widgets.Display;
  */
 @SuppressWarnings("unchecked")
 public class HTMLExporter {
+	private HTMLUtil util;
+
+	public HTMLExporter() {
+		util = new HTMLUtil();
+	}
 
 	/**
-	 * Генерация html-отчета для гороскопа
+	 * Генерация индивидуального гороскопа
 	 * @param event событие
 	 */
 	public void generate(Event event) {
@@ -79,19 +84,25 @@ public class HTMLExporter {
 			head.add(new Tag("script", "type=text/javascript src=plotkit/SweetCanvas.js"));
 			head.add(new Tag("link", "href=horoscope_files/horoscope.css rel=stylesheet type=text/css"));
 			Tag title = new Tag("title");
-			title.add("Гороскоп");
+			title.add("Индивидуальный гороскоп");
 			head.add(title);
 			html.add(head);
 			
-			Tag body = new Tag("body", "bgcolor=#faebd7 leftmargin=0 topmargin=0 marginwidth=0 marginheight=0");
+			Tag body = new Tag("body");
+			body.add(printCopyright());
 			Tag table = new Tag("table", "width=80% border=0 cellpadding=5 cellspacing=0 align=center");
 			body.add(table);
+			body.add(printCopyright());
 			html.add(body);
 	
 			//дата события
 			Tag row = new Tag("tr");
 			Tag cell = new Tag("td", "class=mainheader");
-			cell.add(DateUtil.fulldtf.format(event.getBirth()));
+			cell.add(DateUtil.fulldtf.format(event.getBirth()) +
+				"&ensp;" + (event.getZone() > 0 ? "+" : "") + event.getZone() +
+				"&emsp;" + event.getPlace().getName() +
+				"&ensp;" + event.getPlace().getLatitude() + "&#176;" +
+				", " + event.getPlace().getLongitude() + "&#176;");
 			row.add(cell);
 			table.add(row);
 			
@@ -104,7 +115,7 @@ public class HTMLExporter {
 	
 			//знаменитости
 			generateCelebrities(event.getBirth(), table);
-	
+
 			//основные диаграммы
 			EventStatistics statistics = new EventStatistics(event.getConfiguration());
 			Map<String, Double> signMap = statistics.getPlanetSigns(true);
@@ -192,7 +203,7 @@ public class HTMLExporter {
 	private void generateHouseInSigns(Event event, Tag cell, Map<String, Double> houseMap) {
 		if (event.getConfiguration().getHouses() == null) return;
 		try {
-			for (Base hentity : event.getConfiguration().getHouses()) {
+			for (Model hentity : event.getConfiguration().getHouses()) {
 				House house = (House)hentity;
 				//Определяем количество планет в доме
 				if (houseMap.get(house.getCode()) != null) continue;
@@ -204,14 +215,14 @@ public class HTMLExporter {
 				PlanetHouseTextReference reference = (PlanetHouseTextReference)
 							new PlanetHouseService().getEntity(planet, house, null);
 				if (reference != null) {
-					Tag tr = HTMLUtil.getTaggedHeader(house.getHeaderName(), house.getLinkName());
+					Tag tr = util.getTaggedHeader(house.getHeaderName(), house.getLinkName());
 					cell.add(tr);
 			
 					tr = new Tag("tr");
 					Tag td = new Tag("td");
-					td.add(HTMLUtil.getBoldTaggedString(
+					td.add(util.getBoldTaggedString(
 							house.getShortName() + " в знаке " + sign.getName()));
-					td.add(HTMLUtil.getNormalTaggedString(reference.getText()));
+					td.add(util.getNormalTaggedString(reference.getText()));
 					printGenderText(reference.getGenderText(), event, td);		
 					td.add(new Tag("/br"));
 					tr.add(td);
@@ -232,18 +243,18 @@ public class HTMLExporter {
 	private void generatePlanetInHouses(Event event, Tag cell, Map<String, Double> houseMap) {
 		if (event.getConfiguration().getHouses() == null) return;
 		try {
-			for (Base hentity : event.getConfiguration().getHouses()) {
+			for (Model hentity : event.getConfiguration().getHouses()) {
 				House house = (House)hentity;
 				//Определяем количество планет в доме
 				List<Planet> planets = new ArrayList<Planet>();
-				for (Base pentity : event.getConfiguration().getPlanets()) {
+				for (Model pentity : event.getConfiguration().getPlanets()) {
 					Planet planet = (Planet)pentity;
 					if (planet.getHouse().equals(house))
 						planets.add(planet);
 				}
 				//Создаем информационный блок только если дом не пуст
 				if (planets.size() > 0) {
-					Tag tr = HTMLUtil.getTaggedHeader(house.getHeaderName(), house.getLinkName());
+					Tag tr = util.getTaggedHeader(house.getHeaderName(), house.getLinkName());
 					cell.add(tr);
 			
 					tr = new Tag("tr");
@@ -252,9 +263,9 @@ public class HTMLExporter {
 						PlanetHouseTextReference reference = (PlanetHouseTextReference)
 							new PlanetHouseService().getEntity(planet, house, null);
 						if (reference != null) {
-							td.add(HTMLUtil.getBoldTaggedString(
+							td.add(util.getBoldTaggedString(
 								planet.getName() + " " + house.getCombination()));
-							td.add(HTMLUtil.getNormalTaggedString(reference.getText()));
+							td.add(util.getNormalTaggedString(reference.getText()));
 							printGenderText(reference.getGenderText(), event, td);		
 							td.add(new Tag("/br"));
 						}
@@ -286,23 +297,23 @@ public class HTMLExporter {
 			
 			tr = new Tag("tr");
 			td = new Tag("td");
-			for (Base entity : event.getConfiguration().getPlanets()) {
+			for (Model entity : event.getConfiguration().getPlanets()) {
 				Planet planet = (Planet)entity;
 				if (planet.isPerfect() && planet.getStrongText() != null) {
-					td.add(HTMLUtil.getBoldTaggedString(planet.getName() + " (сила)"));
-					td.add(HTMLUtil.getNormalTaggedString(planet.getStrongText()));
+					td.add(util.getBoldTaggedString(planet.getName() + " (сила)"));
+					td.add(util.getNormalTaggedString(planet.getStrongText()));
 				} else if (planet.isDamaged() && planet.getDamagedText() != null) {
-					td.add(HTMLUtil.getBoldTaggedString(planet.getName() + " (поражение)"));
-					td.add(HTMLUtil.getNormalTaggedString(planet.getDamagedText()));
+					td.add(util.getBoldTaggedString(planet.getName() + " (поражение)"));
+					td.add(util.getNormalTaggedString(planet.getDamagedText()));
 				} else if (planet.isBroken() && planet.getWeakText() != null) { 
-					td.add(HTMLUtil.getBoldTaggedString(planet.getName() + " (слабость)"));
-					td.add(HTMLUtil.getNormalTaggedString(planet.getWeakText()));
+					td.add(util.getBoldTaggedString(planet.getName() + " (слабость)"));
+					td.add(util.getNormalTaggedString(planet.getWeakText()));
 				} else if (planet.isInMine() && planet.getMineText() != null) { 
-					td.add(HTMLUtil.getBoldTaggedString(planet.getName() + " (шахта)"));
-					td.add(HTMLUtil.getNormalTaggedString(planet.getMineText()));
-				} else if (planet.isRetro() && planet.getRetroText() != null) { 
-					td.add(HTMLUtil.getBoldTaggedString(planet.getName() + " (ретроград)"));
-					td.add(HTMLUtil.getNormalTaggedString(planet.getRetroText()));
+					td.add(util.getBoldTaggedString(planet.getName() + " (шахта)"));
+					td.add(util.getNormalTaggedString(planet.getMineText()));
+				} else if (planet.isRetrograde() && planet.getRetroText() != null) { 
+					td.add(util.getBoldTaggedString(planet.getName() + " (ретроград)"));
+					td.add(util.getNormalTaggedString(planet.getRetroText()));
 				}
 			}
 			tr.add(td);
@@ -358,11 +369,12 @@ public class HTMLExporter {
 	 */
 	private void generateAspectTypes(Event event, Tag cell) {
 		try {
-			List<Base> planets = event.getConfiguration().getPlanets();
+			event.getConfiguration().initPlanetAspects();
+			List<Model> planets = event.getConfiguration().getPlanets();
 			//фильтрация списка типов аспектов
-			List<Base> aspectTypes = new AspectTypeService().getList();
+			List<Model> aspectTypes = new AspectTypeService().getList();
 			List<AspectType> types = new ArrayList<AspectType>();
-		    for (Base entity : aspectTypes) {
+		    for (Model entity : aspectTypes) {
 		    	AspectType type = (AspectType)entity;
 		    	if (type.getCode() != null &&
 		    			!type.getCode().equals("COMMON") &&
@@ -376,7 +388,7 @@ public class HTMLExporter {
 		    	Bar bar = new Bar();
 		    	bar.setName(type.getName());
 		    	int value = 0;
-		    	for (Base entity : planets) {
+		    	for (Model entity : planets) {
 		    		Planet planet = (Planet)entity;
 					value += planet.getAspectCountMap().get(type.getCode());
 		    	}
@@ -388,7 +400,7 @@ public class HTMLExporter {
 			Tag tr = new Tag("tr");
 			Tag td = new Tag("td", "class=header");
 			Tag a = new Tag("a", "name=aspects");
-			a.add("Соотношение типов аспектов личности");
+			a.add("Соотношение аспектов планет");
 			td.add(a);
 			tr.add(td);
 			cell.add(tr);
@@ -396,8 +408,8 @@ public class HTMLExporter {
 			tr = new Tag("tr");
 			td = new Tag("td");
 //			Tag p = new Tag("p", "class=shot");
-//			Tag chart = HTMLUtil.getTaggedChart(17, bars, null);
-			Tag chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "asptypechart", "asptypechartopts", "drawAsptypeChart", 4, 400);
+//			Tag chart = util.getTaggedChart(17, bars, null);
+			Tag chart = util.getPlotkitChart(bars, null, "pie", "asptypechart", "asptypechartopts", "drawAsptypeChart", 4, 400);
 			td.add(chart);
 //			p.add(chart);
 //			td.add(p);
@@ -444,13 +456,13 @@ public class HTMLExporter {
 								(Planet)aspect.getSkyPoint2(), 
 								aspect.getAspect().getType());
 					if (reference != null) {
-						Tag tag = HTMLUtil.getBoldTaggedString(
+						Tag tag = util.getBoldTaggedString(
 							reference.getPlanet1().getName() + " " + 
 							aspect.getAspect().getType().getSymbol() + " " + 
 							reference.getPlanet2().getName());
 						td.add(tag);
 
-						tag = HTMLUtil.getNormalTaggedString(reference.getText());
+						tag = util.getNormalTaggedString(reference.getText());
 						td.add(tag);
 						printGenderText(reference.getGenderText(), event, td);
 						td.add(new Tag("/br"));
@@ -503,8 +515,8 @@ public class HTMLExporter {
 		    if (zone != null) {
 				tr = new Tag("tr");
 				td = new Tag("td");
-				td.add(HTMLUtil.getBoldTaggedString(zone.getDescription()));
-				td.add(HTMLUtil.getNormalTaggedString(zone.getText()));
+				td.add(util.getBoldTaggedString(zone.getDescription()));
+				td.add(util.getNormalTaggedString(zone.getText()));
 				printGenderText(zone.getGenderText(), event, td);
 				tr.add(td);
 				cell.add(tr);
@@ -519,8 +531,8 @@ public class HTMLExporter {
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-//				Tag chart = HTMLUtil.getTaggedChart(17, bars, "Развитие духа в сознании");
-				Tag chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "zonechart", "zonechartopts", "drawZoneChart", 3, 300);
+//				Tag chart = util.getTaggedChart(17, bars, "Развитие духа в сознании");
+				Tag chart = util.getPlotkitChart(bars, null, "pie", "zonechart", "zonechartopts", "drawZoneChart", 3, 300);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -550,8 +562,8 @@ public class HTMLExporter {
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-//				chart = HTMLUtil.getTaggedChart(17, bars, "Развитие духа в действии");
-				chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "zone2chart", "zone2chartopts", "drawZoneChart2", 5, 300);
+//				chart = util.getTaggedChart(17, bars, "Развитие духа в действии");
+				chart = util.getPlotkitChart(bars, null, "pie", "zone2chart", "zone2chartopts", "drawZoneChart2", 5, 300);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -600,8 +612,8 @@ public class HTMLExporter {
 		    if (cross != null) {
 				tr = new Tag("tr");
 				td = new Tag("td");
-				td.add(HTMLUtil.getBoldTaggedString(cross.getDescription()));
-				td.add(HTMLUtil.getNormalTaggedString(cross.getText()));
+				td.add(util.getBoldTaggedString(cross.getDescription()));
+				td.add(util.getNormalTaggedString(cross.getText()));
 				printGenderText(cross.getGenderText(), event, td);
 				tr.add(td);
 				cell.add(tr);
@@ -617,7 +629,7 @@ public class HTMLExporter {
 			
 			tr = new Tag("tr");
 			td = new Tag("td");
-			Tag chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "crosschart", "crosschartopts", "drawCrossChart", 3, 300);
+			Tag chart = util.getPlotkitChart(bars, null, "pie", "crosschart", "crosschartopts", "drawCrossChart", 3, 300);
 			td.add(chart);
 			tr.add(td);
 			cell.add(tr);
@@ -637,7 +649,7 @@ public class HTMLExporter {
 			
 			tr = new Tag("tr");
 			td = new Tag("td");
-			chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "crossSignchart", "crossSignchartopts", "drawCrossSignChart", 5, 300);
+			chart = util.getPlotkitChart(bars, null, "pie", "crossSignchart", "crossSignchartopts", "drawCrossSignChart", 5, 300);
 			td.add(chart);
 			tr.add(td);
 			cell.add(tr);
@@ -667,7 +679,7 @@ public class HTMLExporter {
 			
 			tr = new Tag("tr");
 			td = new Tag("td");
-			chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "cross2chart", "cross2chartopts", "drawCrossChart2", 2, 300);
+			chart = util.getPlotkitChart(bars, null, "pie", "cross2chart", "cross2chartopts", "drawCrossChart2", 2, 300);
 			td.add(chart);
 			td.add(new Tag("/br"));
 			tr.add(td);
@@ -688,7 +700,7 @@ public class HTMLExporter {
 			
 			tr = new Tag("tr");
 			td = new Tag("td");
-			chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "crossHousechart", "crossHousechartopts", "drawCrossHouseChart", 4, 300);
+			chart = util.getPlotkitChart(bars, null, "pie", "crossHousechart", "crossHousechartopts", "drawCrossHouseChart", 4, 300);
 			td.add(chart);
 			tr.add(td);
 			cell.add(tr);
@@ -737,8 +749,8 @@ public class HTMLExporter {
 		    if (square != null) {
 				tr = new Tag("tr");
 				td = new Tag("td");
-				td.add(HTMLUtil.getBoldTaggedString(square.getDescription()));
-				td.add(HTMLUtil.getNormalTaggedString(square.getText()));
+				td.add(util.getBoldTaggedString(square.getDescription()));
+				td.add(util.getNormalTaggedString(square.getText()));
 				printGenderText(square.getGenderText(), event, td);
 				tr.add(td);
 				cell.add(tr);
@@ -753,7 +765,7 @@ public class HTMLExporter {
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-				Tag chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "squarechart", "squarechartopts", "drawSquareChart", 5, 300);
+				Tag chart = util.getPlotkitChart(bars, null, "pie", "squarechart", "squarechartopts", "drawSquareChart", 5, 300);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -775,7 +787,7 @@ public class HTMLExporter {
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-				chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "squareSignChart", "squareSignChartOpts", "drawSquareSignChart", 4, 300);
+				chart = util.getPlotkitChart(bars, null, "pie", "squareSignChart", "squareSignChartOpts", "drawSquareSignChart", 4, 300);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -805,7 +817,7 @@ public class HTMLExporter {
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-				chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "square2chart", "square2chartopts", "drawSquare2Chart", 5, 300);
+				chart = util.getPlotkitChart(bars, null, "pie", "square2chart", "square2chartopts", "drawSquare2Chart", 5, 300);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -828,7 +840,7 @@ public class HTMLExporter {
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-				chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "squareHouseChart", "squareHouseChartOpts", "drawSquareHouseChart", 4, 300);
+				chart = util.getPlotkitChart(bars, null, "pie", "squareHouseChart", "squareHouseChartOpts", "drawSquareHouseChart", 4, 300);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -877,8 +889,8 @@ public class HTMLExporter {
 		    if (sphere != null) {
 				tr = new Tag("tr");
 				td = new Tag("td");
-				td.add(HTMLUtil.getBoldTaggedString(sphere.getDescription()));
-				td.add(HTMLUtil.getNormalTaggedString(sphere.getText()));
+				td.add(util.getBoldTaggedString(sphere.getDescription()));
+				td.add(util.getNormalTaggedString(sphere.getText()));
 				printGenderText(sphere.getGenderText(), event, td);
 				tr.add(td);
 				cell.add(tr);
@@ -886,14 +898,14 @@ public class HTMLExporter {
 			    tr = new Tag("tr");
 				td = new Tag("td", "class=header");
 				a = new Tag("a");
-				a.add("Характеристика проявлений личности");
+				a.add("Экстраверсия и интроверсия в сознании человека");
 				td.add(a);
 				tr.add(td);
 				cell.add(tr);
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-				Tag chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "spherechart", "spherechartopts", "drawSphereChart", 0, 300);
+				Tag chart = util.getPlotkitChart(bars, null, "pie", "spherechart", "spherechartopts", "drawSphereChart", 0, 300);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -901,7 +913,7 @@ public class HTMLExporter {
 			    tr = new Tag("tr");
 				td = new Tag("td", "class=header");
 				a = new Tag("a");
-				a.add("Характеристика реализации личности");
+				a.add("Экстраверсия и интроверсия в поступках человека");
 				td.add(a);
 				tr.add(td);
 				cell.add(tr);
@@ -923,7 +935,7 @@ public class HTMLExporter {
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-				chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "sphere2chart", "sphere2chartopts", "drawSphere2Chart", 1, 300);
+				chart = util.getPlotkitChart(bars, null, "pie", "sphere2chart", "sphere2chartopts", "drawSphere2Chart", 1, 300);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -972,8 +984,8 @@ public class HTMLExporter {
 		    if (inyan != null) {
 				tr = new Tag("tr");
 				td = new Tag("td");
-				td.add(HTMLUtil.getBoldTaggedString(inyan.getDescription()));
-				td.add(HTMLUtil.getNormalTaggedString(inyan.getText()));
+				td.add(util.getBoldTaggedString(inyan.getDescription()));
+				td.add(util.getNormalTaggedString(inyan.getText()));
 				printGenderText(inyan.getGenderText(), event, td);
 				tr.add(td);
 				cell.add(tr);
@@ -981,14 +993,14 @@ public class HTMLExporter {
 			    tr = new Tag("tr");
 				td = new Tag("td", "class=header");
 				a = new Tag("a");
-				a.add("Характеристика личности");
+				a.add("Женское и мужское в сознании человека");
 				td.add(a);
 				tr.add(td);
 				cell.add(tr);
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-				Tag chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "inyanchart", "inyanchartopts", "drawInYanChart", 1, 300);
+				Tag chart = util.getPlotkitChart(bars, null, "pie", "inyanchart", "inyanchartopts", "drawInYanChart", 1, 300);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -996,7 +1008,7 @@ public class HTMLExporter {
 			    tr = new Tag("tr");
 				td = new Tag("td", "class=header");
 				a = new Tag("a");
-				a.add("Реализация личности");
+				a.add("Женское и мужское в поступках человека");
 				td.add(a);
 				tr.add(td);
 				cell.add(tr);
@@ -1018,7 +1030,7 @@ public class HTMLExporter {
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-				chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "inyan2chart", "inyan2chartopts", "drawInYan2Chart", 3, 300);
+				chart = util.getPlotkitChart(bars, null, "pie", "inyan2chart", "inyan2chartopts", "drawInYan2Chart", 3, 300);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -1058,8 +1070,8 @@ public class HTMLExporter {
 			Tag b = new Tag("b");
 			b.add("Характеристика личности");
 			td.add(b);
-			List<Base> list = new CategoryService().getList();
-			for (Base entity : list) {
+			List<Model> list = new CategoryService().getList();
+			for (Model entity : list) {
 				Category category = (Category)entity;
 				td.add(new Tag("/br"));
 				Tag a = new Tag("a", "href=#" + category.getCode());
@@ -1095,7 +1107,7 @@ public class HTMLExporter {
 			b.add("Реализация личности");
 			td.add(b);
 			list = new HouseService().getList();
-			for (Base entity : list) {
+			for (Model entity : list) {
 				House house = (House)entity;
 				td.add(new Tag("/br"));
 				Tag a = new Tag("a", "href=#" + house.getLinkName());
@@ -1130,14 +1142,14 @@ public class HTMLExporter {
 	
 				tr = new Tag("tr");
 				td = new Tag("td");
-				td.add(HTMLUtil.getNormalTaggedString("В один день с вами родились такие известные люди:"));
+				td.add(util.getNormalTaggedString("В один день с вами родились такие известные люди:"));
 				Tag p = new Tag("p");
 				
-				for (Base entity : list) {
+				for (Model entity : list) {
 					Event event = (Event)entity;
-					p.add(HTMLUtil.getSmallTaggedString(DateUtil.formatDate(event.getBirth())));
-					p.add(HTMLUtil.getBoldTaggedSubstring(event.getName() + " " + event.getSurname()));
-					p.add(HTMLUtil.getSmallTaggedString("&nbsp;&nbsp;&nbsp;" + event.getDescription()));
+					p.add(util.getSmallTaggedString(DateUtil.formatDate(event.getBirth())));
+					p.add(util.getBoldTaggedSubstring(event.getName() + " " + event.getSurname()));
+					p.add(util.getSmallTaggedString("&nbsp;&nbsp;&nbsp;" + event.getDescription()));
 					p.add(new Tag("/br"));
 				}
 				td.add(p);
@@ -1188,8 +1200,8 @@ public class HTMLExporter {
 			tr = new Tag("tr");
 			td = new Tag("td");
 //			Tag p = new Tag("p", "class=shot");
-//			Tag chart = HTMLUtil.getTaggedChart(17, bars, null);
-			Tag chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "signchart", "signchartopts", "drawSignChart", 4, 300);
+//			Tag chart = util.getTaggedChart(17, bars, null);
+			Tag chart = util.getPlotkitChart(bars, null, "pie", "signchart", "signchartopts", "drawSignChart", 4, 300);
 			td.add(chart);
 //			p.add(chart);
 //			td.add(p);
@@ -1200,7 +1212,7 @@ public class HTMLExporter {
 			tr = new Tag("tr");
 			td = new Tag("td", "class=header");
 			a = new Tag("a", "name=dsigns");
-			a.add("Кредо вашей жизни");
+			a.add("Кредо Вашей жизни");
 			td.add(a);
 			tr.add(td);
 			cell.add(tr);
@@ -1208,8 +1220,8 @@ public class HTMLExporter {
 			tr = new Tag("tr");
 			td = new Tag("td");
 //			Tag p = new Tag("p", "class=shot");
-//			chart = HTMLUtil.getTaggedChart(17, bars2, null);
-			chart = HTMLUtil.getPlotkitChart(bars2, null, "pie", "sign2chart", "sign2chartopts", "drawSignChart2", 1, 300);
+//			chart = util.getTaggedChart(17, bars2, null);
+			chart = util.getPlotkitChart(bars2, null, "pie", "sign2chart", "sign2chartopts", "drawSignChart2", 1, 300);
 			td.add(chart);
 //			p.add(chart);
 //			td.add(p);
@@ -1251,8 +1263,8 @@ public class HTMLExporter {
 			tr = new Tag("tr");
 			td = new Tag("td");
 //			Tag p = new Tag("p", "class=shot");
-//			Tag chart = HTMLUtil.getTaggedChart(17, bars, null);
-			Tag chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "housechart", "housechartopts", "drawHouseChart", 3, 400);
+//			Tag chart = util.getTaggedChart(17, bars, null);
+			Tag chart = util.getPlotkitChart(bars, null, "pie", "housechart", "housechartopts", "drawHouseChart", 3, 400);
 			td.add(chart);
 //			p.add(chart);
 //			td.add(p);
@@ -1275,7 +1287,7 @@ public class HTMLExporter {
 				House house = (House)event.getConfiguration().getHouses().get(0);
 				if (house == null) return;
 				int value = (int)house.getCoord();
-				Base entity = new DegreeService().find(new Long(String.valueOf(value)));
+				Model entity = new DegreeService().find(new Long(String.valueOf(value)));
 			    if (entity != null) {
 			    	TextGenderReference degree = (TextGenderReference)entity;
 					Tag tr = new Tag("tr");
@@ -1289,16 +1301,16 @@ public class HTMLExporter {
 					tr = new Tag("tr");
 					td = new Tag("td");
 					Tag p = new Tag("p", "class=name");
-					Tag tag = HTMLUtil.getBoldTaggedString(degree.getId() + "&#176; " + degree.getCode());
+					Tag tag = util.getBoldTaggedString(degree.getId() + "&#176; " + degree.getCode());
 					p.add(tag);
 					td.add(p);
 					
 					p = new Tag("p", "class=desc");
-					tag = HTMLUtil.getItalicTaggedString(degree.getDescription());
+					tag = util.getItalicTaggedString(degree.getDescription());
 					p.add(tag);
 					td.add(p);
 
-					tag = HTMLUtil.getNormalTaggedString(degree.getText());
+					tag = util.getNormalTaggedString(degree.getText());
 					td.add(tag);
 					tr.add(td);
 					cell.add(tr);
@@ -1317,14 +1329,14 @@ public class HTMLExporter {
 	private void generatePlanetsInSigns(Event event, Tag cell) {
 		try {
 			if (event.getConfiguration().getPlanets() != null) {
-				for (Base entity : event.getConfiguration().getPlanets()) {
+				for (Model entity : event.getConfiguration().getPlanets()) {
 					Planet planet = (Planet)entity;
 				    if (planet.isMain()) {
 				    	List<Object> list = new ExportService().getPlanetInSignText(planet, planet.getSign());
 				    	if (list != null && list.size() > 0) 
 				    		for (Object object : list) {
 				    			List<Object> row = (List<Object>)object;
-								Tag tr = HTMLUtil.getTaggedHeader(
+								Tag tr = util.getTaggedHeader(
 										row.get(1).toString(),	//description
 										row.get(2).toString());	//linkname
 								cell.add(tr);
@@ -1496,7 +1508,7 @@ public class HTMLExporter {
 					}
 			
 				if (type.length() > 0) {
-				    Base entity = new CardTypeService().find(type);
+				    Model entity = new CardTypeService().find(type);
 				    if (entity != null) {
 				    	TextGenderReference cardType = (TextGenderReference)entity;
 						Tag tr = new Tag("tr");
@@ -1509,11 +1521,11 @@ public class HTMLExporter {
 	
 						tr = new Tag("tr");
 						td = new Tag("td");
-						Tag tag = HTMLUtil.getBoldTaggedString(cardType.getName());
+						Tag tag = util.getBoldTaggedString(cardType.getName());
 						td.add(tag);
-						tag = HTMLUtil.getItalicTaggedString(cardType.getDescription());
+						tag = util.getItalicTaggedString(cardType.getDescription());
 						td.add(tag);
-						tag = HTMLUtil.getNormalTaggedString(cardType.getText());
+						tag = util.getNormalTaggedString(cardType.getText());
 						td.add(tag);
 						tr.add(td);
 						cell.add(tr);
@@ -1559,7 +1571,7 @@ public class HTMLExporter {
 		    	bars[i] = bar;
 		    }
 		    Element element = null;
-		    for (Base entity : new ElementService().getList()) {
+		    for (Model entity : new ElementService().getList()) {
 		    	element = (Element)entity;
 		    	String[] codes = element.getCode().split("_");
 		    	if (codes.length == elements.length) {
@@ -1577,9 +1589,9 @@ public class HTMLExporter {
 				tr = new Tag("tr");
 				td = new Tag("td");
 				Tag p = new Tag("p");
-				Tag tag = HTMLUtil.getBoldTaggedString(element.getName());
+				Tag tag = util.getBoldTaggedString(element.getName());
 				p.add(tag);
-				tag = HTMLUtil.getNormalTaggedString(element.getText());
+				tag = util.getNormalTaggedString(element.getText());
 				p.add(tag);
 				printGenderText(element.getGenderText(), event, p);
 				td.add(p);
@@ -1591,15 +1603,15 @@ public class HTMLExporter {
 		    tr = new Tag("tr");
 			td = new Tag("td", "class=header");
 			a = new Tag("a");
-			a.add("Характеристика проявлений личности");
+			a.add("Стихии в сознании человека");
 			td.add(a);
 			tr.add(td);
 			cell.add(tr);
 			
 			tr = new Tag("tr");
 			td = new Tag("td");
-//			Tag chart = HTMLUtil.getTaggedChart(17, bars, null);
-			Tag chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "elemchart", "elemchartopts", "drawElemChart", 5, 300);
+//			Tag chart = util.getTaggedChart(17, bars, null);
+			Tag chart = util.getPlotkitChart(bars, null, "pie", "elemchart", "elemchartopts", "drawElemChart", 5, 300);
 			td.add(chart);
 			tr.add(td);
 			cell.add(tr);
@@ -1623,7 +1635,7 @@ public class HTMLExporter {
 		    tr = new Tag("tr");
 			td = new Tag("td", "class=header");
 			a = new Tag("a");
-			a.add("Характеристика реализации личности");
+			a.add("Стихии в поступках человека");
 			td.add(a);
 			tr.add(td);
 			cell.add(tr);
@@ -1631,8 +1643,8 @@ public class HTMLExporter {
 			tr = new Tag("tr");
 			td = new Tag("td");
 //			p = new Tag("p", "class=shot");
-//			chart = HTMLUtil.getTaggedChart(17, bars, null);
-			chart = HTMLUtil.getPlotkitChart(bars, null, "pie", "elem2chart", "elem2chartopts", "drawElemChart2", 0, 300);
+//			chart = util.getTaggedChart(17, bars, null);
+			chart = util.getPlotkitChart(bars, null, "pie", "elem2chart", "elem2chartopts", "drawElemChart2", 0, 300);
 			td.add(chart);
 //			p.add(chart);
 //			td.add(p);
@@ -1673,10 +1685,28 @@ public class HTMLExporter {
 			boolean isMale = !event.isFemale();
 			String male = text.getMaletext();
 			String female = text.getFemaletext();
-			Tag tag = HTMLUtil.getGenderHeader(isMale, male, female);
+			Tag tag = util.getGenderHeader(isMale, male, female);
 			if (tag != null) cell.add(tag);					//gender header
-			tag = HTMLUtil.getGenderText(isMale, male, female);
+			tag = util.getGenderText(isMale, male, female);
 			if (tag != null) cell.add(tag);					//gender
 		}
+	}
+
+	/**
+	 * Отображение информации о копирайте
+	 * @return html-тег с содержимым
+	 */
+	private Tag printCopyright() {
+		Tag cell = new Tag("div", "class=copyright");
+		cell.add("&copy; 1998-");
+		Tag script = new Tag("script", "type=text/javascript");
+		script.add("var year = new Date().getYear(); if (year < 1000) year += 1900; document.write(year);");
+		cell.add(script);
+		cell.add("Астрологический сервис" + "&nbsp;");
+		Tag a = new Tag("a", "href=http://zvezdochet.kz/ target=_blank");
+		a.add("«Звездочёт»");
+		cell.add(a);
+		cell.add(" &mdash; Взгляни на себя в прошлом, настоящем и будущем");
+		return cell;
 	}
 }

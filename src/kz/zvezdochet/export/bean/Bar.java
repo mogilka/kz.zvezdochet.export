@@ -3,7 +3,7 @@ package kz.zvezdochet.export.bean;
 import org.eclipse.swt.graphics.Color;
 
 /**
- * Класс, представляющий элемент диаграммы
+ * Элемент диаграммы
  * @author Nataly Didenko
  *
  */

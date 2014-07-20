@@ -5,7 +5,7 @@ import kz.zvezdochet.core.util.CoreUtil;
 import kz.zvezdochet.export.bean.Bar;
 
 /**
- * Класс, предоставляющий вспомогательные методы для html-экспорта
+ * Набор утилит для html-экспорта
  * @author Nataly Didenko
  *
  */
@@ -17,7 +17,7 @@ public class HTMLUtil {
 	 * @param value текст
 	 * @return тег абзаца
 	 */
-	public static Tag getBoldTaggedString(String value) {
+	public Tag getBoldTaggedString(String value) {
 		Tag tag = new Tag("p", "class=name");
 		tag.add(value);
 		return tag;
@@ -28,7 +28,7 @@ public class HTMLUtil {
 	 * @param value текст
 	 * @return тег
 	 */
-	public static Tag getBoldTaggedSubstring(String value) {
+	public Tag getBoldTaggedSubstring(String value) {
 		Tag tag = new Tag("strong", "class=name");
 		tag.add(value);
 		return tag;
@@ -39,7 +39,7 @@ public class HTMLUtil {
 	 * @param value текст
 	 * @return тег
 	 */
-	public static Tag getBoldCenteredString(String value) {
+	public Tag getBoldCenteredString(String value) {
 		Tag tag = new Tag("p", "font-weight=bold text-align=center");
 		tag.add(value);
 		return tag;
@@ -50,7 +50,7 @@ public class HTMLUtil {
 	 * @param value текст
 	 * @return тег абзаца
 	 */
-	public static Tag getItalicTaggedString(String value) {
+	public Tag getItalicTaggedString(String value) {
 		Tag tag = new Tag("p", "class=desc");
 		tag.add(value);
 		return tag;
@@ -61,7 +61,7 @@ public class HTMLUtil {
 	 * @param value текст
 	 * @return тег абзаца
 	 */
-	public static Tag getNormalTaggedString(String value) {
+	public Tag getNormalTaggedString(String value) {
 		Tag tag = new Tag("p");
 		tag.add(value);
 		return tag;
@@ -72,7 +72,7 @@ public class HTMLUtil {
 	 * @param value текст
 	 * @return тег
 	 */
-	public static Tag getSmallTaggedString(String value) {
+	public Tag getSmallTaggedString(String value) {
 		Tag tag = new Tag("small");
 		tag.add(value);
 		return tag;
@@ -83,7 +83,7 @@ public class HTMLUtil {
 	 * @param value текст
 	 * @return тег абзаца
 	 */
-	public static Tag getSmallBoldTaggedString(String value) {
+	public Tag getSmallBoldTaggedString(String value) {
 		Tag tag = new Tag("small");
 		Tag b = new Tag("b");
 		b.add(value);
@@ -98,7 +98,7 @@ public class HTMLUtil {
 	 * @param value текст
 	 * @return тег строки таблицы
 	 */
-	public static Tag getTaggedHeader(String name, String link) {
+	public Tag getTaggedHeader(String name, String link) {
 		Tag tr = new Tag("tr");
 		Tag td = new Tag("td", "class=header");
 		Tag a = new Tag("a", "name=" + link);
@@ -115,7 +115,7 @@ public class HTMLUtil {
 	 * @param maleText текст для мужчин
 	 * @return тег заголовка
 	 */
-	public static Tag getGenderHeader(boolean isMale, String maleText, String femaleText) {
+	public Tag getGenderHeader(boolean isMale, String maleText, String femaleText) {
 		if (isMale) {
 			if (maleText != null && maleText.length() > 0)  
 				return getBoldTaggedString("Мужчина");
@@ -133,7 +133,7 @@ public class HTMLUtil {
 	 * @param maleText текст для мужчин
 	 * @return тег
 	 */
-	public static Tag getGenderText(boolean isMale, String maleText, String femaleText) {
+	public Tag getGenderText(boolean isMale, String maleText, String femaleText) {
 		if (isMale) {
 		    if (maleText != null && maleText.length() > 0) 
 				return getNormalTaggedString(maleText);
@@ -149,7 +149,7 @@ public class HTMLUtil {
 	 * @param age возраст
 	 * @return строка, добавляемая к возрасту
 	 */
-	public static String getAgeString(int age) {
+	public String getAgeString(int age) {
 		String s = String.valueOf(age);
 		String lastChar = s.substring(s.length() - 1); 
 		if (age > 10 && age < 20)
@@ -172,7 +172,7 @@ public class HTMLUtil {
 	 * @param chartName наименование диаграммы
 	 * @return тег диаграммы
 	 */
-	public static Tag getTaggedChart(int colnum, Bar[] bars, String chartName) {
+	public Tag getTaggedChart(int colnum, Bar[] bars, String chartName) {
 		Tag div = new Tag("div", "id=horizbar");
 		
 		if (chartName != null) {
@@ -234,7 +234,7 @@ public class HTMLUtil {
 	 * 	6	черный
 	 * @return тег диаграммы
 	 */
-	public static Tag getPlotkitChart(Bar[] bars, String chartName, String type, 
+	public Tag getPlotkitChart(Bar[] bars, String chartName, String type, 
 					String divname, String optname, String funcname, int color, int height) {
 		Tag div = new Tag("div");
 		if (chartName != null) {

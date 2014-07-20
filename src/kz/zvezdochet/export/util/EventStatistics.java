@@ -9,7 +9,7 @@ import kz.zvezdochet.analytics.util.AnalyticsUtil;
 import kz.zvezdochet.bean.House;
 import kz.zvezdochet.bean.Planet;
 import kz.zvezdochet.bean.Sign;
-import kz.zvezdochet.core.bean.Base;
+import kz.zvezdochet.core.bean.Model;
 import kz.zvezdochet.core.service.DataAccessException;
 import kz.zvezdochet.core.util.CoreUtil;
 import kz.zvezdochet.service.HouseService;
@@ -18,7 +18,7 @@ import kz.zvezdochet.util.AstroUtil;
 import kz.zvezdochet.util.Configuration;
 
 /**
- * Класс, представляющий набор статистических данных события
+ * Набор статистических данных события
  * @author Nataly Didenko
  *
  */
@@ -47,17 +47,17 @@ public class EventStatistics {
 
 	/**
 	 * Вычисление выраженных знаков Зодиака
-	 * @param main признак того, что нужно учитывать только главные планеты
+	 * @param main признак того, что нужно учитывать только индивидуальные планеты
 	 * @return карта приоритетных знаков
 	 * @throws DataAccessException 
 	 */
 	public Map<String, Double> getPlanetSigns(boolean main) throws DataAccessException {
 		if (conf.getPlanets() != null) {
+			conf.initPlanetSigns();
 			planetSigns = new HashMap<String, Double>();
 			signPlanets = new HashMap<String, Integer>();
-			for (Base entity : conf.getPlanets()) {
-				Planet planet = (Planet)entity;
-
+			for (Model model : conf.getPlanets()) {
+				Planet planet = (Planet)model;
 				if (main && !planet.isMain()) continue;
 				double value = 0.0;
 				Object object = planetSigns.get(planet.getSign().getCode());
@@ -81,7 +81,7 @@ public class EventStatistics {
 	public void initPlanetHouses() throws DataAccessException {
 		if (conf.getPlanets() != null) {
 			planetHouses = new HashMap<String, Double>();
-			for (Base entity : conf.getPlanets()) {
+			for (Model entity : conf.getPlanets()) {
 				Planet planet = (Planet)entity;
 				for (int i = 0; i < conf.getHouses().size(); i++) {
 					House house1 = (House)conf.getHouses().get(i);
@@ -108,7 +108,7 @@ public class EventStatistics {
 	 * @throws DataAccessException 
 	 */
 	public House getHouse(String code) throws DataAccessException {
-		for (Base entity : conf.getHouses())
+		for (Model entity : conf.getHouses())
 			if (((House)entity).getCode().equals(code))
 				return (House)entity;
 		return null;
