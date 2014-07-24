@@ -3,10 +3,8 @@ package kz.zvezdochet.export.handler;
 import kz.zvezdochet.bean.Event;
 import kz.zvezdochet.core.handler.Handler;
 import kz.zvezdochet.core.ui.util.DialogUtil;
-import kz.zvezdochet.core.util.DateUtil;
 import kz.zvezdochet.export.exporter.HTMLExporter;
-import kz.zvezdochet.parts.EventPart;
-import kz.zvezdochet.util.Configuration;
+import kz.zvezdochet.part.EventPart;
 
 import org.eclipse.e4.core.contexts.Active;
 import org.eclipse.e4.core.di.annotations.Execute;
