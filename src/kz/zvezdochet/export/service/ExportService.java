@@ -33,9 +33,9 @@ order by Categories.Priority
         List<Object> list = new ArrayList<Object>();
         PreparedStatement ps = null;
         ResultSet rs = null;
-		String query;
+		String sql;
 		try {
-			query =	
+			sql =	
 				"select categories.priority, categories.name, categories.code, " +
 					"planetsigns.text, textgender.male, textgender.female " +
 				"from (((planetsigns inner join categories on planetsigns.typeid = categories.id) " +
@@ -45,7 +45,7 @@ order by Categories.Priority
 				"where signs.code = '" + sign.getCode() + "' " +
 					"and planets.code = '" + planet.getCode() + "' " +
 				"order by categories.priority";
-			ps = Connector.getInstance().getConnection().prepareStatement(query);
+			ps = Connector.getInstance().getConnection().prepareStatement(sql);
 			rs = ps.executeQuery();
 			int columns = rs.getMetaData().getColumnCount();
 			while (rs.next()) { 
@@ -72,15 +72,15 @@ order by Categories.Priority
         Element element = new Element();
         PreparedStatement ps = null;
         ResultSet rs = null;
-		String query;
+		String sql;
 		try {
-			query =	
+			sql =	
 				"select Elements.*, TextGender.Male, TextGender.Female " +
 	            "from Elements " +
 	            "left join TextGender on Elements.GenderID = TextGender.ID " +
 	            "where Elements.Name like '" + codes[0] + "' " +
 				"order by Types.Priority)"; //TODO проверить синтаксис
-			ps = Connector.getInstance().getConnection().prepareStatement(query);
+			ps = Connector.getInstance().getConnection().prepareStatement(sql);
 			rs = ps.executeQuery();
 			int columns = rs.getMetaData().getColumnCount();
 			while (rs.next()) { 
