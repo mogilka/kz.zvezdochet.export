@@ -48,6 +48,7 @@ import kz.zvezdochet.export.service.ExportService;
 import kz.zvezdochet.export.util.EventStatistics;
 import kz.zvezdochet.export.util.HTMLUtil;
 import kz.zvezdochet.service.AspectTypeService;
+import kz.zvezdochet.service.EventService;
 import kz.zvezdochet.service.HouseService;
 import kz.zvezdochet.service.SignService;
 import kz.zvezdochet.util.AstroUtil;
@@ -203,8 +204,8 @@ public class HTMLExporter {
 	private void generateHouseInSigns(Event event, Tag cell, Map<String, Double> houseMap) {
 		if (event.getConfiguration().getHouses() == null) return;
 		try {
-			for (Model hentity : event.getConfiguration().getHouses()) {
-				House house = (House)hentity;
+			for (Model hmodel : event.getConfiguration().getHouses()) {
+				House house = (House)hmodel;
 				//Определяем количество планет в доме
 				if (houseMap.get(house.getCode()) != null) continue;
 				//Создаем информационный блок только если дом пуст
@@ -213,7 +214,7 @@ public class HTMLExporter {
 				if (planet == null) continue;
 				
 				PlanetHouseTextReference reference = (PlanetHouseTextReference)
-							new PlanetHouseService().getEntity(planet, house, null);
+							new PlanetHouseService().find(planet, house, null);
 				if (reference != null) {
 					Tag tr = util.getTaggedHeader(house.getHeaderName(), house.getLinkName());
 					cell.add(tr);
@@ -243,12 +244,12 @@ public class HTMLExporter {
 	private void generatePlanetInHouses(Event event, Tag cell, Map<String, Double> houseMap) {
 		if (event.getConfiguration().getHouses() == null) return;
 		try {
-			for (Model hentity : event.getConfiguration().getHouses()) {
-				House house = (House)hentity;
+			for (Model hmodel : event.getConfiguration().getHouses()) {
+				House house = (House)hmodel;
 				//Определяем количество планет в доме
 				List<Planet> planets = new ArrayList<Planet>();
-				for (Model pentity : event.getConfiguration().getPlanets()) {
-					Planet planet = (Planet)pentity;
+				for (Model pmodel : event.getConfiguration().getPlanets()) {
+					Planet planet = (Planet)pmodel;
 					if (planet.getHouse().equals(house))
 						planets.add(planet);
 				}
@@ -261,7 +262,7 @@ public class HTMLExporter {
 					Tag td = new Tag("td");
 					for (Planet planet : planets) {
 						PlanetHouseTextReference reference = (PlanetHouseTextReference)
-							new PlanetHouseService().getEntity(planet, house, null);
+							new PlanetHouseService().find(planet, house, null);
 						if (reference != null) {
 							td.add(util.getBoldTaggedString(
 								planet.getName() + " " + house.getCombination()));
@@ -297,8 +298,8 @@ public class HTMLExporter {
 			
 			tr = new Tag("tr");
 			td = new Tag("td");
-			for (Model entity : event.getConfiguration().getPlanets()) {
-				Planet planet = (Planet)entity;
+			for (Model model : event.getConfiguration().getPlanets()) {
+				Planet planet = (Planet)model;
 				if (planet.isPerfect() && planet.getStrongText() != null) {
 					td.add(util.getBoldTaggedString(planet.getName() + " (сила)"));
 					td.add(util.getNormalTaggedString(planet.getStrongText()));
@@ -308,7 +309,7 @@ public class HTMLExporter {
 				} else if (planet.isBroken() && planet.getWeakText() != null) { 
 					td.add(util.getBoldTaggedString(planet.getName() + " (слабость)"));
 					td.add(util.getNormalTaggedString(planet.getWeakText()));
-				} else if (planet.isInMine() && planet.getMineText() != null) { 
+				} else if (planet.inMine() && planet.getMineText() != null) { 
 					td.add(util.getBoldTaggedString(planet.getName() + " (шахта)"));
 					td.add(util.getNormalTaggedString(planet.getMineText()));
 				} else if (planet.isRetrograde() && planet.getRetroText() != null) { 
@@ -374,8 +375,8 @@ public class HTMLExporter {
 			//фильтрация списка типов аспектов
 			List<Model> aspectTypes = new AspectTypeService().getList();
 			List<AspectType> types = new ArrayList<AspectType>();
-		    for (Model entity : aspectTypes) {
-		    	AspectType type = (AspectType)entity;
+		    for (Model model : aspectTypes) {
+		    	AspectType type = (AspectType)model;
 		    	if (type.getCode() != null &&
 		    			!type.getCode().equals("COMMON") &&
 		    			type.getName() != null)
@@ -388,8 +389,8 @@ public class HTMLExporter {
 		    	Bar bar = new Bar();
 		    	bar.setName(type.getName());
 		    	int value = 0;
-		    	for (Model entity : planets) {
-		    		Planet planet = (Planet)entity;
+		    	for (Model model : planets) {
+		    		Planet planet = (Planet)model;
 					value += planet.getAspectCountMap().get(type.getCode());
 		    	}
 		    	bar.setValue(value / 2);
@@ -451,7 +452,7 @@ public class HTMLExporter {
 								aspect.getAspect().getType().getCode().equals("NEUTRAL")) 	
 						) {
 					PlanetAspectTextReference reference = (PlanetAspectTextReference)
-						new PlanetAspectService().getEntity(
+						new PlanetAspectService().find(
 								(Planet)aspect.getSkyPoint1(), 
 								(Planet)aspect.getSkyPoint2(), 
 								aspect.getAspect().getType());
@@ -1071,8 +1072,8 @@ public class HTMLExporter {
 			b.add("Характеристика личности");
 			td.add(b);
 			List<Model> list = new CategoryService().getList();
-			for (Model entity : list) {
-				Category category = (Category)entity;
+			for (Model model : list) {
+				Category category = (Category)model;
 				td.add(new Tag("/br"));
 				Tag a = new Tag("a", "href=#" + category.getCode());
 				a.add(category.getName());
@@ -1107,8 +1108,8 @@ public class HTMLExporter {
 			b.add("Реализация личности");
 			td.add(b);
 			list = new HouseService().getList();
-			for (Model entity : list) {
-				House house = (House)entity;
+			for (Model model : list) {
+				House house = (House)model;
 				td.add(new Tag("/br"));
 				Tag a = new Tag("a", "href=#" + house.getLinkName());
 				a.add(house.getHeaderName());
@@ -1130,7 +1131,7 @@ public class HTMLExporter {
 	 */
 	private void generateCelebrities(Date date, Tag cell) {
 		try {
-			List<Event> list = new AnalyticsService().getCelebrities(DateUtil.formatDate(date));
+			List<Event> list = new EventService().findEphemeron(date);
 			if (list != null && list.size() > 0) {
 				Tag tr = new Tag("tr");
 				Tag td = new Tag("td", "class=header");
@@ -1145,8 +1146,8 @@ public class HTMLExporter {
 				td.add(util.getNormalTaggedString("В один день с вами родились такие известные люди:"));
 				Tag p = new Tag("p");
 				
-				for (Model entity : list) {
-					Event event = (Event)entity;
+				for (Model model : list) {
+					Event event = (Event)model;
 					p.add(util.getSmallTaggedString(DateUtil.formatDate(event.getBirth())));
 					p.add(util.getBoldTaggedSubstring(event.getName() + " " + event.getSurname()));
 					p.add(util.getSmallTaggedString("&nbsp;&nbsp;&nbsp;" + event.getDescription()));
@@ -1287,9 +1288,9 @@ public class HTMLExporter {
 				House house = (House)event.getConfiguration().getHouses().get(0);
 				if (house == null) return;
 				int value = (int)house.getCoord();
-				Model entity = new DegreeService().find(new Long(String.valueOf(value)));
-			    if (entity != null) {
-			    	TextGenderReference degree = (TextGenderReference)entity;
+				Model model = new DegreeService().find(new Long(String.valueOf(value)));
+			    if (model != null) {
+			    	TextGenderReference degree = (TextGenderReference)model;
 					Tag tr = new Tag("tr");
 					Tag td = new Tag("td", "class=header");
 					Tag a = new Tag("a", "name=degree");
@@ -1306,12 +1307,16 @@ public class HTMLExporter {
 					td.add(p);
 					
 					p = new Tag("p", "class=desc");
-					tag = util.getItalicTaggedString(degree.getDescription());
-					p.add(tag);
+					if (degree.getDescription() != null) {
+						tag = util.getItalicTaggedString(degree.getDescription());
+						p.add(tag);
+					}
 					td.add(p);
 
-					tag = util.getNormalTaggedString(degree.getText());
-					td.add(tag);
+					if (degree.getText() != null) {
+						tag = util.getNormalTaggedString(degree.getText());
+						td.add(tag);
+					}
 					tr.add(td);
 					cell.add(tr);
 			    }
@@ -1329,8 +1334,8 @@ public class HTMLExporter {
 	private void generatePlanetsInSigns(Event event, Tag cell) {
 		try {
 			if (event.getConfiguration().getPlanets() != null) {
-				for (Model entity : event.getConfiguration().getPlanets()) {
-					Planet planet = (Planet)entity;
+				for (Model model : event.getConfiguration().getPlanets()) {
+					Planet planet = (Planet)model;
 				    if (planet.isMain()) {
 				    	List<Object> list = new ExportService().getPlanetInSignText(planet, planet.getSign());
 				    	if (list != null && list.size() > 0) 
@@ -1508,9 +1513,9 @@ public class HTMLExporter {
 					}
 			
 				if (type.length() > 0) {
-				    Model entity = new CardTypeService().find(type);
-				    if (entity != null) {
-				    	TextGenderReference cardType = (TextGenderReference)entity;
+				    Model model = new CardTypeService().find(type);
+				    if (model != null) {
+				    	TextGenderReference cardType = (TextGenderReference)model;
 						Tag tr = new Tag("tr");
 						Tag td = new Tag("td", "class=header");
 						Tag a = new Tag("a", "name=type");
@@ -1571,8 +1576,8 @@ public class HTMLExporter {
 		    	bars[i] = bar;
 		    }
 		    Element element = null;
-		    for (Model entity : new ElementService().getList()) {
-		    	element = (Element)entity;
+		    for (Model model : new ElementService().getList()) {
+		    	element = (Element)model;
 		    	String[] codes = element.getCode().split("_");
 		    	if (codes.length == elements.length) {
 		    		boolean match = true;

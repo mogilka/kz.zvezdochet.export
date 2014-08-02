@@ -81,8 +81,8 @@ public class EventStatistics {
 	public void initPlanetHouses() throws DataAccessException {
 		if (conf.getPlanets() != null) {
 			planetHouses = new HashMap<String, Double>();
-			for (Model entity : conf.getPlanets()) {
-				Planet planet = (Planet)entity;
+			for (Model model : conf.getPlanets()) {
+				Planet planet = (Planet)model;
 				for (int i = 0; i < conf.getHouses().size(); i++) {
 					House house1 = (House)conf.getHouses().get(i);
 					int j = (i == conf.getHouses().size() - 1) ? 0 : i + 1;
@@ -108,9 +108,9 @@ public class EventStatistics {
 	 * @throws DataAccessException 
 	 */
 	public House getHouse(String code) throws DataAccessException {
-		for (Model entity : conf.getHouses())
-			if (((House)entity).getCode().equals(code))
-				return (House)entity;
+		for (Model model : conf.getHouses())
+			if (((House)model).getCode().equals(code))
+				return (House)model;
 		return null;
 	}
 
