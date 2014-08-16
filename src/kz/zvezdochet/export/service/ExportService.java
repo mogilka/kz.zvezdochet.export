@@ -16,7 +16,7 @@ import kz.zvezdochet.core.tool.Connector;
  * Класс, обеспечивающий взаимодействие с БД
  * @author Nataly Didenko
  */
-public class ExportService {
+public class ExportService { 
 
 	public List<Object> getPlanetInSignText(Planet planet, Sign sign) throws DataAccessException {
 /*

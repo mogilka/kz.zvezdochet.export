@@ -19,19 +19,23 @@ import kz.zvezdochet.analytics.bean.Element;
 import kz.zvezdochet.analytics.bean.GenderText;
 import kz.zvezdochet.analytics.bean.Halfsphere;
 import kz.zvezdochet.analytics.bean.InYan;
-import kz.zvezdochet.analytics.bean.PlanetAspectTextReference;
-import kz.zvezdochet.analytics.bean.PlanetHouseTextReference;
+import kz.zvezdochet.analytics.bean.PlanetAspectTextDictionary;
+import kz.zvezdochet.analytics.bean.PlanetHouseTextDictionary;
 import kz.zvezdochet.analytics.bean.Square;
-import kz.zvezdochet.analytics.bean.TextGenderReference;
+import kz.zvezdochet.analytics.bean.TextGenderDictionary;
 import kz.zvezdochet.analytics.bean.Zone;
 import kz.zvezdochet.analytics.service.AnalyticsService;
 import kz.zvezdochet.analytics.service.CardTypeService;
 import kz.zvezdochet.analytics.service.CategoryService;
+import kz.zvezdochet.analytics.service.CrossService;
 import kz.zvezdochet.analytics.service.DegreeService;
 import kz.zvezdochet.analytics.service.ElementService;
+import kz.zvezdochet.analytics.service.HalfsphereService;
+import kz.zvezdochet.analytics.service.InYanService;
 import kz.zvezdochet.analytics.service.PlanetAspectService;
 import kz.zvezdochet.analytics.service.PlanetHouseService;
-import kz.zvezdochet.analytics.util.AnalyticsUtil;
+import kz.zvezdochet.analytics.service.SquareService;
+import kz.zvezdochet.analytics.service.ZoneService;
 import kz.zvezdochet.bean.AspectType;
 import kz.zvezdochet.bean.Event;
 import kz.zvezdochet.bean.House;
@@ -213,9 +217,9 @@ public class HTMLExporter {
 				Planet planet = new AnalyticsService().getSignPlanet(sign, "HOME");
 				if (planet == null) continue;
 				
-				PlanetHouseTextReference reference = (PlanetHouseTextReference)
+				PlanetHouseTextDictionary dict = (PlanetHouseTextDictionary)
 							new PlanetHouseService().find(planet, house, null);
-				if (reference != null) {
+				if (dict != null) {
 					Tag tr = util.getTaggedHeader(house.getHeaderName(), house.getLinkName());
 					cell.add(tr);
 			
@@ -223,8 +227,8 @@ public class HTMLExporter {
 					Tag td = new Tag("td");
 					td.add(util.getBoldTaggedString(
 							house.getShortName() + " в знаке " + sign.getName()));
-					td.add(util.getNormalTaggedString(reference.getText()));
-					printGenderText(reference.getGenderText(), event, td);		
+					td.add(util.getNormalTaggedString(dict.getText()));
+					printGenderText(dict.getGenderText(), event, td);		
 					td.add(new Tag("/br"));
 					tr.add(td);
 					cell.add(tr);
@@ -261,13 +265,13 @@ public class HTMLExporter {
 					tr = new Tag("tr");
 					Tag td = new Tag("td");
 					for (Planet planet : planets) {
-						PlanetHouseTextReference reference = (PlanetHouseTextReference)
+						PlanetHouseTextDictionary dict = (PlanetHouseTextDictionary)
 							new PlanetHouseService().find(planet, house, null);
-						if (reference != null) {
+						if (dict != null) {
 							td.add(util.getBoldTaggedString(
 								planet.getName() + " " + house.getCombination()));
-							td.add(util.getNormalTaggedString(reference.getText()));
-							printGenderText(reference.getGenderText(), event, td);		
+							td.add(util.getNormalTaggedString(dict.getText()));
+							printGenderText(dict.getGenderText(), event, td);		
 							td.add(new Tag("/br"));
 						}
 					}
@@ -451,21 +455,21 @@ public class HTMLExporter {
 								!((Planet)aspect.getSkyPoint1()).isBroken() &&
 								aspect.getAspect().getType().getCode().equals("NEUTRAL")) 	
 						) {
-					PlanetAspectTextReference reference = (PlanetAspectTextReference)
+					PlanetAspectTextDictionary dict = (PlanetAspectTextDictionary)
 						new PlanetAspectService().find(
 								(Planet)aspect.getSkyPoint1(), 
 								(Planet)aspect.getSkyPoint2(), 
 								aspect.getAspect().getType());
-					if (reference != null) {
+					if (dict != null) {
 						Tag tag = util.getBoldTaggedString(
-							reference.getPlanet1().getName() + " " + 
+							dict.getPlanet1().getName() + " " + 
 							aspect.getAspect().getType().getSymbol() + " " + 
-							reference.getPlanet2().getName());
+							dict.getPlanet2().getName());
 						td.add(tag);
 
-						tag = util.getNormalTaggedString(reference.getText());
+						tag = util.getNormalTaggedString(dict.getText());
 						td.add(tag);
-						printGenderText(reference.getGenderText(), event, td);
+						printGenderText(dict.getGenderText(), event, td);
 						td.add(new Tag("/br"));
 					}
 				}
@@ -499,10 +503,11 @@ public class HTMLExporter {
 			int i = -1;
 			Zone zone = null;
 			double score = 0.0;
+			ZoneService service = new ZoneService();
 		    while (iterator.hasNext()) {
 		    	Entry<String, Double> entry = iterator.next();
 		    	Bar bar = new Bar();
-		    	Zone element = AnalyticsUtil.getZone(entry.getKey());
+		    	Zone element = (Zone)service.find(entry.getKey());
 		    	bar.setName(element.getName());
 		    	bar.setValue(entry.getValue());
 		    	bar.setColor(element.getColor());
@@ -554,7 +559,7 @@ public class HTMLExporter {
 			    while (iterator.hasNext()) {
 			    	Entry<String, Double> entry = iterator.next();
 			    	Bar bar = new Bar();
-			    	Zone element = AnalyticsUtil.getZone(entry.getKey());
+			    	Zone element = (Zone)service.find(entry.getKey());
 			    	bar.setName(element.getName());
 			    	bar.setValue(entry.getValue());
 			    	bar.setColor(element.getColor());
@@ -596,10 +601,11 @@ public class HTMLExporter {
 			int i = -1;
 			Cross cross = null;
 			double score = 0.0;
+			CrossService service = new CrossService();
 		    while (iterator.hasNext()) {
 		    	Entry<String, Double> entry = iterator.next();
 		    	Bar bar = new Bar();
-		    	Cross element = AnalyticsUtil.getCross(entry.getKey());
+		    	Cross element = (Cross)service.find(entry.getKey());
 		    	bar.setName(element.getDiaName());
 		    	bar.setValue(entry.getValue());
 		    	bar.setColor(element.getColor());
@@ -671,7 +677,7 @@ public class HTMLExporter {
 		    while (iterator.hasNext()) {
 		    	Entry<String, Double> entry = iterator.next();
 		    	Bar bar = new Bar();
-		    	Cross element = AnalyticsUtil.getCross(entry.getKey());
+		    	Cross element = (Cross)service.find(entry.getKey());
 		    	bar.setName(element.getDiaName());
 		    	bar.setValue(entry.getValue());
 		    	bar.setColor(element.getColor());
@@ -733,10 +739,11 @@ public class HTMLExporter {
 			int i = -1;
 			Square square = null;
 			double score = 0.0;
+			SquareService service = new SquareService();
 		    while (iterator.hasNext()) {
 		    	Entry<String, Double> entry = iterator.next();
 		    	Bar bar = new Bar();
-		    	Square element = AnalyticsUtil.getSquare(entry.getKey());
+		    	Square element = (Square)service.find(entry.getKey());
 		    	bar.setName(element.getName());
 		    	bar.setValue(entry.getValue());
 		    	bar.setColor(element.getColor());
@@ -779,7 +786,7 @@ public class HTMLExporter {
 			    while (iterator.hasNext()) {
 			    	Entry<String, Double> entry = iterator.next();
 			    	Bar bar = new Bar();
-			    	Sign element = (Sign)new SignService().find(entry.getKey());
+			    	Sign element = (Sign)service.find(entry.getKey());
 			    	bar.setName(element.getDiaName());
 			    	bar.setValue(entry.getValue());
 			    	bar.setColor(element.getColor());
@@ -809,7 +816,7 @@ public class HTMLExporter {
 			    while (iterator.hasNext()) {
 			    	Entry<String, Double> entry = iterator.next();
 			    	Bar bar = new Bar();
-			    	Square element = AnalyticsUtil.getSquare(entry.getKey());
+			    	Square element = (Square)service.find(entry.getKey());
 			    	bar.setName(element.getName());
 			    	bar.setValue(entry.getValue());
 			    	bar.setColor(element.getColor());
@@ -828,11 +835,12 @@ public class HTMLExporter {
 				bars = new Bar[houseMap.size()];
 				iterator = houseMap.entrySet().iterator();
 				i = -1;
+				HouseService hservice = new HouseService();
 			    while (iterator.hasNext()) {
 			    	Entry<String, Double> entry = iterator.next();
 			    	Bar bar = new Bar();
 					//по индексу трети определяем дом, в котором она находится
-			    	House element = (House)new HouseService().find(entry.getKey());
+			    	House element = (House)hservice.find(entry.getKey());
 			    	bar.setName(element.getDiaName());
 			    	bar.setValue(entry.getValue());
 			    	bar.setColor(element.getColor());
@@ -873,10 +881,11 @@ public class HTMLExporter {
 			int i = -1;
 			Halfsphere sphere = null;
 			double score = 0.0;
+			HalfsphereService service = new HalfsphereService();
 		    while (iterator.hasNext()) {
 		    	Entry<String, Double> entry = iterator.next();
 		    	Bar bar = new Bar();
-		    	Halfsphere element = AnalyticsUtil.getHalfsphere(entry.getKey());
+		    	Halfsphere element = (Halfsphere)service.find(entry.getKey());
 		    	bar.setName(element.getDiaName());
 		    	bar.setValue(entry.getValue());
 		    	bar.setColor(element.getColor());
@@ -927,7 +936,7 @@ public class HTMLExporter {
 			    while (iterator.hasNext()) {
 			    	Entry<String, Double> entry = iterator.next();
 			    	Bar bar = new Bar();
-			    	Halfsphere element = AnalyticsUtil.getHalfsphere(entry.getKey());
+			    	Halfsphere element = (Halfsphere)service.find(entry.getKey());
 			    	bar.setName(element.getDiaName());
 			    	bar.setValue(entry.getValue());
 			    	bar.setColor(element.getColor());
@@ -968,10 +977,11 @@ public class HTMLExporter {
 			int i = -1;
 			InYan inyan = null;
 			double score = 0.0;
+			InYanService service = new InYanService();
 		    while (iterator.hasNext()) {
 		    	Entry<String, Double> entry = iterator.next();
 		    	Bar bar = new Bar();
-		    	InYan element = AnalyticsUtil.getInYan(entry.getKey());
+		    	InYan element = (InYan)service.find(entry.getKey());
 		    	bar.setName(element.getDiaName());
 		    	bar.setValue(entry.getValue());
 		    	bar.setColor(element.getColor());
@@ -1022,7 +1032,7 @@ public class HTMLExporter {
 			    while (iterator.hasNext()) {
 			    	Entry<String, Double> entry = iterator.next();
 			    	Bar bar = new Bar();
-			    	InYan element = AnalyticsUtil.getInYan(entry.getKey());
+			    	InYan element = (InYan)service.find(entry.getKey());
 			    	bar.setName(element.getDiaName());
 			    	bar.setValue(entry.getValue());
 			    	bar.setColor(element.getColor());
@@ -1182,11 +1192,12 @@ public class HTMLExporter {
 			Bar[] bars2 = new Bar[signMap.size()];
 			Iterator<Map.Entry<String, Double>> iterator = signMap.entrySet().iterator();
 			int i = -1;
+			SignService service = new SignService();
 		    while (iterator.hasNext()) {
 		    	i++;
 		    	Entry<String, Double> entry = iterator.next();
 		    	Bar bar = new Bar();
-		    	Sign sign = (Sign)new SignService().find(entry.getKey());
+		    	Sign sign = (Sign)service.find(entry.getKey());
 		    	bar.setName(sign.getName());
 		    	bar.setValue(entry.getValue());
 		    	bar.setColor(sign.getColor());
@@ -1290,7 +1301,7 @@ public class HTMLExporter {
 				int value = (int)house.getCoord();
 				Model model = new DegreeService().find(new Long(String.valueOf(value)));
 			    if (model != null) {
-			    	TextGenderReference degree = (TextGenderReference)model;
+			    	TextGenderDictionary degree = (TextGenderDictionary)model;
 					Tag tr = new Tag("tr");
 					Tag td = new Tag("td", "class=header");
 					Tag a = new Tag("a", "name=degree");
@@ -1515,7 +1526,7 @@ public class HTMLExporter {
 				if (type.length() > 0) {
 				    Model model = new CardTypeService().find(type);
 				    if (model != null) {
-				    	TextGenderReference cardType = (TextGenderReference)model;
+				    	TextGenderDictionary cardType = (TextGenderDictionary)model;
 						Tag tr = new Tag("tr");
 						Tag td = new Tag("td", "class=header");
 						Tag a = new Tag("a", "name=type");
@@ -1564,19 +1575,20 @@ public class HTMLExporter {
 			Bar[] bars = new Bar[elementMap.size()];
 			Iterator<Map.Entry<String, Double>> iterator = elementMap.entrySet().iterator();
 			int i = -1;
+			ElementService service = new ElementService();
 		    while (iterator.hasNext()) {
 		    	i++;
 		    	Entry<String, Double> entry = iterator.next();
 		    	elements[i] = entry.getKey();
 		    	Bar bar = new Bar();
-		    	Element element = AnalyticsUtil.getElement(entry.getKey());
+		    	Element element = (Element)service.find(entry.getKey());
 		    	bar.setName(element.getDiaName());
 		    	bar.setValue(entry.getValue());
 		    	bar.setColor(element.getColor());
 		    	bars[i] = bar;
 		    }
 		    Element element = null;
-		    for (Model model : new ElementService().getList()) {
+		    for (Model model : service.getList()) {
 		    	element = (Element)model;
 		    	String[] codes = element.getCode().split("_");
 		    	if (codes.length == elements.length) {
@@ -1630,7 +1642,7 @@ public class HTMLExporter {
 		    	i++;
 		    	Entry<String, Double> entry = iterator.next();
 		    	Bar bar = new Bar();
-		    	element = AnalyticsUtil.getElement(entry.getKey());
+		    	element = (Element)service.find(entry.getKey());
 		    	bar.setName(element.getDiaName());
 		    	bar.setValue(entry.getValue());
 		    	bar.setColor(element.getColor());
