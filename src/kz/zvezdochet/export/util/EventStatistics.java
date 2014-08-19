@@ -27,7 +27,7 @@ public class EventStatistics {
 	private Map<String, Double> planetSigns;
 	private Map<String, Double> planetHouses;
 	private Map<String, Double> planetElements;
-	private Map<String, Double> planetInYans;
+	private Map<String, Double> planetYinYangs;
 	private Map<String, Double> planetHalfspheres;
 	private Map<String, Double> planetSquares;
 	private Map<String, Double> planetCrosses;
@@ -35,7 +35,7 @@ public class EventStatistics {
 	private Map<String, Integer> signPlanets;
 
 	private Map<String, Double> houseElements;
-	private Map<String, Double> houseInYans;
+	private Map<String, Double> houseYinYangs;
 	private Map<String, Double> houseHalfspheres;
 	private Map<String, Double> houseSquares;
 	private Map<String, Double> houseCrosses;
@@ -122,7 +122,7 @@ public class EventStatistics {
 	public void initPlanetDivisions() throws DataAccessException {
 		if (planetSigns != null) {
 			planetElements = new HashMap<String, Double>();
-			planetInYans = new HashMap<String, Double>();
+			planetYinYangs = new HashMap<String, Double>();
 			planetHalfspheres = new HashMap<String, Double>();
 			planetSquares = new HashMap<String, Double>();
 			planetCrosses = new HashMap<String, Double>();
@@ -143,12 +143,12 @@ public class EventStatistics {
 				planetElements.put(division, value);
 
 				//выделенность инь-ян
-				division = AnalyticsUtil.signToInYan(sign.getNumber());
-				object = planetInYans.get(division);
+				division = AnalyticsUtil.signToYinYang(sign.getNumber());
+				object = planetYinYangs.get(division);
 				if (object != null)
 					value = (Double)object;
 				value += entry.getValue();
-				planetInYans.put(division, value);
+				planetYinYangs.put(division, value);
 
 				//выделенность полусфер
 				division = AnalyticsUtil.signToVerticalHalfSphere(sign.getNumber());
@@ -204,8 +204,8 @@ public class EventStatistics {
 		return planetSigns;
 	}
 
-	public Map<String, Double> getPlanetInYans() {
-		return planetInYans;
+	public Map<String, Double> getPlanetYinYangs() {
+		return planetYinYangs;
 	}
 
 	public Map<String, Double> getPlanetHalfspheres() {
@@ -236,7 +236,7 @@ public class EventStatistics {
 	public void initHouseDivisions() throws DataAccessException {
 		if (planetHouses != null) {
 			houseElements = new HashMap<String, Double>();
-			houseInYans = new HashMap<String, Double>();
+			houseYinYangs = new HashMap<String, Double>();
 			houseHalfspheres = new HashMap<String, Double>();
 			houseSquares = new HashMap<String, Double>();
 			houseCrosses = new HashMap<String, Double>();
@@ -257,12 +257,12 @@ public class EventStatistics {
 				houseElements.put(division, value);
 
 				//выделенность инь-ян
-				division = AnalyticsUtil.houseToInYan(house.getNumber());
-				object = houseInYans.get(division);
+				division = AnalyticsUtil.houseToYinYang(house.getNumber());
+				object = houseYinYangs.get(division);
 				if (object != null)
 					value = (Double)object;
 				value += entry.getValue();
-				houseInYans.put(division, value);
+				houseYinYangs.put(division, value);
 
 				//выделенность полусфер
 				division = AnalyticsUtil.houseToVerticalHalfSphere(house.getNumber());
@@ -310,8 +310,8 @@ public class EventStatistics {
 		return houseElements;
 	}
 
-	public Map<String, Double> getHouseInYans() {
-		return houseInYans;
+	public Map<String, Double> getHouseYinYangs() {
+		return houseYinYangs;
 	}
 
 	public Map<String, Double> getHouseHalfspheres() {

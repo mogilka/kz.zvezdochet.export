@@ -18,7 +18,7 @@ import kz.zvezdochet.analytics.bean.Cross;
 import kz.zvezdochet.analytics.bean.Element;
 import kz.zvezdochet.analytics.bean.GenderText;
 import kz.zvezdochet.analytics.bean.Halfsphere;
-import kz.zvezdochet.analytics.bean.InYan;
+import kz.zvezdochet.analytics.bean.YinYang;
 import kz.zvezdochet.analytics.bean.PlanetAspectTextDictionary;
 import kz.zvezdochet.analytics.bean.PlanetHouseTextDictionary;
 import kz.zvezdochet.analytics.bean.Square;
@@ -31,7 +31,7 @@ import kz.zvezdochet.analytics.service.CrossService;
 import kz.zvezdochet.analytics.service.DegreeService;
 import kz.zvezdochet.analytics.service.ElementService;
 import kz.zvezdochet.analytics.service.HalfsphereService;
-import kz.zvezdochet.analytics.service.InYanService;
+import kz.zvezdochet.analytics.service.YinYangService;
 import kz.zvezdochet.analytics.service.PlanetAspectService;
 import kz.zvezdochet.analytics.service.PlanetHouseService;
 import kz.zvezdochet.analytics.service.SquareService;
@@ -152,7 +152,7 @@ public class HTMLExporter {
 			generateElements(event, table, statistics);
 	
 			//выделенность инь-ян
-			generateInYan(event, table, statistics);
+			generateYinYang(event, table, statistics);
 			
 			//выделенность полусфер
 			generateHalfSpheres(event, table, statistics);
@@ -206,7 +206,7 @@ public class HTMLExporter {
 	 * @param houseMap карта домов
 	 */
 	private void generateHouseInSigns(Event event, Tag cell, Map<String, Double> houseMap) {
-		if (event.getConfiguration().getHouses() == null) return;
+		if (null == event.getConfiguration().getHouses()) return;
 		try {
 			for (Model hmodel : event.getConfiguration().getHouses()) {
 				House house = (House)hmodel;
@@ -215,7 +215,7 @@ public class HTMLExporter {
 				//Создаем информационный блок только если дом пуст
 				Sign sign = AstroUtil.getSkyPointSign(house.getCoord());
 				Planet planet = new AnalyticsService().getSignPlanet(sign, "HOME");
-				if (planet == null) continue;
+				if (null == planet) continue;
 				
 				PlanetHouseTextDictionary dict = (PlanetHouseTextDictionary)
 							new PlanetHouseService().find(planet, house, null);
@@ -246,7 +246,7 @@ public class HTMLExporter {
 	 * @param houseMap карта домов
 	 */
 	private void generatePlanetInHouses(Event event, Tag cell, Map<String, Double> houseMap) {
-		if (event.getConfiguration().getHouses() == null) return;
+		if (null == event.getConfiguration().getHouses()) return;
 		try {
 			for (Model hmodel : event.getConfiguration().getHouses()) {
 				House house = (House)hmodel;
@@ -961,7 +961,7 @@ public class HTMLExporter {
 	 * @param cell тег-контейнер для вложенных тегов
 	 * @param statistics объект статистики
 	 */
-	private void generateInYan(Event event, Tag cell, EventStatistics statistics) {
+	private void generateYinYang(Event event, Tag cell, EventStatistics statistics) {
 		try {
 			Tag tr = new Tag("tr");
 			Tag td = new Tag("td", "class=header");
@@ -971,17 +971,17 @@ public class HTMLExporter {
 			tr.add(td);
 			cell.add(tr);
 			
-			Map<String, Double> inyanMap = statistics.getPlanetInYans();
-			Bar[] bars = new Bar[inyanMap.size()];
-			Iterator<Map.Entry<String, Double>> iterator = inyanMap.entrySet().iterator();
+			Map<String, Double> yinYangMap = statistics.getPlanetYinYangs();
+			Bar[] bars = new Bar[yinYangMap.size()];
+			Iterator<Map.Entry<String, Double>> iterator = yinYangMap.entrySet().iterator();
 			int i = -1;
-			InYan inyan = null;
+			YinYang yinyang = null;
 			double score = 0.0;
-			InYanService service = new InYanService();
+			YinYangService service = new YinYangService();
 		    while (iterator.hasNext()) {
 		    	Entry<String, Double> entry = iterator.next();
 		    	Bar bar = new Bar();
-		    	InYan element = (InYan)service.find(entry.getKey());
+		    	YinYang element = (YinYang)service.find(entry.getKey());
 		    	bar.setName(element.getDiaName());
 		    	bar.setValue(entry.getValue());
 		    	bar.setColor(element.getColor());
@@ -989,15 +989,15 @@ public class HTMLExporter {
 		    	//определяем наиболее выраженный элемент
 		    	if (entry.getValue() > score) {
 		    		score = entry.getValue();
-		    		inyan = element;
+		    		yinyang = element;
 		    	}
 		    }
-		    if (inyan != null) {
+		    if (yinyang != null) {
 				tr = new Tag("tr");
 				td = new Tag("td");
-				td.add(util.getBoldTaggedString(inyan.getDescription()));
-				td.add(util.getNormalTaggedString(inyan.getText()));
-				printGenderText(inyan.getGenderText(), event, td);
+				td.add(util.getBoldTaggedString(yinyang.getDescription()));
+				td.add(util.getNormalTaggedString(yinyang.getText()));
+				printGenderText(yinyang.getGenderText(), event, td);
 				tr.add(td);
 				cell.add(tr);
 
@@ -1011,7 +1011,7 @@ public class HTMLExporter {
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-				Tag chart = util.getPlotkitChart(bars, null, "pie", "inyanchart", "inyanchartopts", "drawInYanChart", 1, 300);
+				Tag chart = util.getPlotkitChart(bars, null, "pie", "yinyangchart", "yinyangchartopts", "drawYinYangChart", 1, 300);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -1024,15 +1024,15 @@ public class HTMLExporter {
 				tr.add(td);
 				cell.add(tr);
 				
-				inyanMap = statistics.getHouseInYans();
-				bars = new Bar[inyanMap.size()];
-				iterator = inyanMap.entrySet().iterator();
+				yinYangMap = statistics.getHouseYinYangs();
+				bars = new Bar[yinYangMap.size()];
+				iterator = yinYangMap.entrySet().iterator();
 				i = -1;
-				inyan = null;
+				yinyang = null;
 			    while (iterator.hasNext()) {
 			    	Entry<String, Double> entry = iterator.next();
 			    	Bar bar = new Bar();
-			    	InYan element = (InYan)service.find(entry.getKey());
+			    	YinYang element = (YinYang)service.find(entry.getKey());
 			    	bar.setName(element.getDiaName());
 			    	bar.setValue(entry.getValue());
 			    	bar.setColor(element.getColor());
@@ -1041,7 +1041,7 @@ public class HTMLExporter {
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-				chart = util.getPlotkitChart(bars, null, "pie", "inyan2chart", "inyan2chartopts", "drawInYan2Chart", 3, 300);
+				chart = util.getPlotkitChart(bars, null, "pie", "yinyang2chart", "yinyang2chartopts", "drawYinYang2Chart", 3, 300);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -1297,7 +1297,7 @@ public class HTMLExporter {
 			if (event.getConfiguration().getHouses() != null &&
 					event.getConfiguration().getHouses().size() > 0) {
 				House house = (House)event.getConfiguration().getHouses().get(0);
-				if (house == null) return;
+				if (null == house) return;
 				int value = (int)house.getCoord();
 				Model model = new DegreeService().find(new Long(String.valueOf(value)));
 			    if (model != null) {
