@@ -14,32 +14,26 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import kz.zvezdochet.analytics.bean.Category;
-import kz.zvezdochet.analytics.bean.Cross;
-import kz.zvezdochet.analytics.bean.Element;
-import kz.zvezdochet.analytics.bean.Halfsphere;
 import kz.zvezdochet.analytics.bean.PlanetAspectText;
 import kz.zvezdochet.analytics.bean.PlanetHouseText;
-import kz.zvezdochet.analytics.bean.Square;
-import kz.zvezdochet.analytics.bean.YinYang;
-import kz.zvezdochet.analytics.bean.Zone;
 import kz.zvezdochet.analytics.service.AnalyticsService;
 import kz.zvezdochet.analytics.service.CardTypeService;
 import kz.zvezdochet.analytics.service.CategoryService;
-import kz.zvezdochet.analytics.service.CrossService;
 import kz.zvezdochet.analytics.service.DegreeService;
-import kz.zvezdochet.analytics.service.ElementService;
-import kz.zvezdochet.analytics.service.HalfsphereService;
 import kz.zvezdochet.analytics.service.PlanetAspectService;
 import kz.zvezdochet.analytics.service.PlanetHouseService;
-import kz.zvezdochet.analytics.service.SquareService;
-import kz.zvezdochet.analytics.service.YinYangService;
-import kz.zvezdochet.analytics.service.ZoneService;
 import kz.zvezdochet.bean.AspectType;
+import kz.zvezdochet.bean.Cross;
+import kz.zvezdochet.bean.Element;
 import kz.zvezdochet.bean.Event;
+import kz.zvezdochet.bean.Halfsphere;
 import kz.zvezdochet.bean.House;
 import kz.zvezdochet.bean.Planet;
 import kz.zvezdochet.bean.Sign;
 import kz.zvezdochet.bean.SkyPointAspect;
+import kz.zvezdochet.bean.Square;
+import kz.zvezdochet.bean.YinYang;
+import kz.zvezdochet.bean.Zone;
 import kz.zvezdochet.core.bean.GenderText;
 import kz.zvezdochet.core.bean.Model;
 import kz.zvezdochet.core.bean.TextGenderDictionary;
@@ -52,9 +46,15 @@ import kz.zvezdochet.export.service.ExportService;
 import kz.zvezdochet.export.util.EventStatistics;
 import kz.zvezdochet.export.util.HTMLUtil;
 import kz.zvezdochet.service.AspectTypeService;
+import kz.zvezdochet.service.CrossService;
+import kz.zvezdochet.service.ElementService;
 import kz.zvezdochet.service.EventService;
+import kz.zvezdochet.service.HalfsphereService;
 import kz.zvezdochet.service.HouseService;
 import kz.zvezdochet.service.SignService;
+import kz.zvezdochet.service.SquareService;
+import kz.zvezdochet.service.YinYangService;
+import kz.zvezdochet.service.ZoneService;
 import kz.zvezdochet.util.AstroUtil;
 
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -1578,7 +1578,7 @@ public class HTMLExporter {
 			
 			//определение выраженной стихии
 			Map<String, Double> elementMap = statistics.getPlanetElements();
-			String[] elements = new String[elementMap.size()]; 
+			String[] elements = new String[elementMap.size()];
 			Bar[] bars = new Bar[elementMap.size()];
 			Iterator<Map.Entry<String, Double>> iterator = elementMap.entrySet().iterator();
 			int i = -1;
@@ -1695,6 +1695,8 @@ public class HTMLExporter {
 			//а ещё лучше открывать его
 		} catch (Exception e) {
 			e.printStackTrace();
+		} finally {
+			System.out.println("Экспорт завершён");
 		}
 	}
 

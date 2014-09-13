@@ -19,7 +19,6 @@ Require-Bundle: org.eclipse.ui,
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Import-Package: kz.zvezdochet.analytics.bean,
  kz.zvezdochet.analytics.service,
- kz.zvezdochet.analytics.util,
  kz.zvezdochet.bean,
  kz.zvezdochet.core.bean,
  kz.zvezdochet.core.util,

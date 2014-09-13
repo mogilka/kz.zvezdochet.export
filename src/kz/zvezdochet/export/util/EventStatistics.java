@@ -5,15 +5,26 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import kz.zvezdochet.analytics.util.AnalyticsUtil;
+import kz.zvezdochet.bean.Cross;
+import kz.zvezdochet.bean.Element;
+import kz.zvezdochet.bean.Halfsphere;
 import kz.zvezdochet.bean.House;
 import kz.zvezdochet.bean.Planet;
 import kz.zvezdochet.bean.Sign;
+import kz.zvezdochet.bean.Square;
+import kz.zvezdochet.bean.YinYang;
+import kz.zvezdochet.bean.Zone;
 import kz.zvezdochet.core.bean.Model;
 import kz.zvezdochet.core.service.DataAccessException;
 import kz.zvezdochet.core.util.CoreUtil;
+import kz.zvezdochet.service.CrossService;
+import kz.zvezdochet.service.ElementService;
+import kz.zvezdochet.service.HalfsphereService;
 import kz.zvezdochet.service.HouseService;
 import kz.zvezdochet.service.SignService;
+import kz.zvezdochet.service.SquareService;
+import kz.zvezdochet.service.YinYangService;
+import kz.zvezdochet.service.ZoneService;
 import kz.zvezdochet.util.AstroUtil;
 import kz.zvezdochet.util.Configuration;
 
@@ -135,7 +146,8 @@ public class EventStatistics {
 				double value = 0.0;
 				
 				//выделенность стихий
-		    	String division = AnalyticsUtil.signToElement(sign.getNumber());
+				Element element = (Element)new ElementService().find(sign.getElementId());
+		    	String division = element.getCode();
 				Object object = planetElements.get(division);
 				if (object != null)
 					value = (Double)object;
@@ -143,7 +155,9 @@ public class EventStatistics {
 				planetElements.put(division, value);
 
 				//выделенность инь-ян
-				division = AnalyticsUtil.signToYinYang(sign.getNumber());
+				value = 0.0;
+				YinYang yinYang = (YinYang)new YinYangService().find(sign.getYinyangId());
+				division = yinYang.getCode();
 				object = planetYinYangs.get(division);
 				if (object != null)
 					value = (Double)object;
@@ -151,14 +165,18 @@ public class EventStatistics {
 				planetYinYangs.put(division, value);
 
 				//выделенность полусфер
-				division = AnalyticsUtil.signToVerticalHalfSphere(sign.getNumber());
+				value = 0.0;
+				Halfsphere halfsphere = (Halfsphere)new HalfsphereService().find(sign.getVerticalHalfSphereId());
+				division = halfsphere.getCode();
 				object = planetHalfspheres.get(division);
 				if (object != null)
 					value = (Double)object;
 				value += entry.getValue();
 				planetHalfspheres.put(division, value);
 
-				division = AnalyticsUtil.signToHorizontalHalfSphere(sign.getNumber());
+				value = 0.0;
+				halfsphere = (Halfsphere)new HalfsphereService().find(sign.getHorizontalalHalfSphereId());
+				division = halfsphere.getCode();
 				object = planetHalfspheres.get(division);
 				if (object != null)
 					value = (Double)object;
@@ -166,7 +184,9 @@ public class EventStatistics {
 				planetHalfspheres.put(division, value);
 
 				//выделенность квадратов
-				division = AnalyticsUtil.signToSquare(sign.getNumber());
+				value = 0.0;
+				Square square = (Square)new SquareService().find(sign.getSquareId());
+				division = square.getCode();
 				object = planetSquares.get(division);
 				if (object != null)
 					value = (Double)object;
@@ -174,7 +194,9 @@ public class EventStatistics {
 				planetSquares.put(division, value);
 
 				//выделенность крестов
-				division = AnalyticsUtil.signToCross(sign.getNumber());
+				value = 0.0;
+				Cross cross = (Cross)new CrossService().find(sign.getCrossId());
+				division = cross.getCode();
 				object = planetCrosses.get(division);
 				if (object != null)
 					value = (Double)object;
@@ -182,7 +204,9 @@ public class EventStatistics {
 				planetCrosses.put(division, value);
 
 				//выделенность зон
-				division = AnalyticsUtil.signToZone(sign.getNumber());
+				value = 0.0;
+				Zone zone = (Zone)new ZoneService().find(sign.getZoneId());
+				division = zone.getCode();
 				object = planetZones.get(division);
 				if (object != null)
 					value = (Double)object;
@@ -249,7 +273,8 @@ public class EventStatistics {
 				double value = 0.0;
 				
 				//выделенность стихий
-		    	String division = AnalyticsUtil.houseToElement(house.getNumber());
+				Element element = (Element)new ElementService().find(house.getElementId());
+		    	String division = element.getCode();
 				Object object = houseElements.get(division);
 				if (object != null)
 					value = (Double)object;
@@ -257,7 +282,9 @@ public class EventStatistics {
 				houseElements.put(division, value);
 
 				//выделенность инь-ян
-				division = AnalyticsUtil.houseToYinYang(house.getNumber());
+				value = 0.0;
+				YinYang yinYang = (YinYang)new YinYangService().find(house.getYinyangId());
+				division = yinYang.getCode();
 				object = houseYinYangs.get(division);
 				if (object != null)
 					value = (Double)object;
@@ -265,14 +292,18 @@ public class EventStatistics {
 				houseYinYangs.put(division, value);
 
 				//выделенность полусфер
-				division = AnalyticsUtil.houseToVerticalHalfSphere(house.getNumber());
+				value = 0.0;
+				Halfsphere halfsphere = (Halfsphere)new HalfsphereService().find(house.getVerticalHalfSphereId());
+				division = halfsphere.getCode();
 				object = houseHalfspheres.get(division);
 				if (object != null)
 					value = (Double)object;
 				value += entry.getValue();
 				houseHalfspheres.put(division, value);
 
-				division = AnalyticsUtil.houseToHorizontalHalfSphere(house.getNumber());
+				value = 0.0;
+				halfsphere = (Halfsphere)new HalfsphereService().find(house.getHorizontalalHalfSphereId());
+				division = halfsphere.getCode();
 				object = houseHalfspheres.get(division);
 				if (object != null)
 					value = (Double)object;
@@ -280,7 +311,9 @@ public class EventStatistics {
 				houseHalfspheres.put(division, value);
 
 				//выделенность квадратов
-				division = AnalyticsUtil.houseToSquare(house.getNumber());
+				value = 0.0;
+				Square square = (Square)new SquareService().find(house.getSquareId());
+				division = square.getCode();
 				object = houseSquares.get(division);
 				if (object != null)
 					value = (Double)object;
@@ -288,7 +321,9 @@ public class EventStatistics {
 				houseSquares.put(division, value);
 
 				//выделенность крестов
-				division = AnalyticsUtil.houseToCross(house.getNumber());
+				value = 0.0;
+				Cross cross = (Cross)new CrossService().find(house.getCrossId());
+				division = cross.getCode();
 				object = houseCrosses.get(division);
 				if (object != null)
 					value = (Double)object;
@@ -296,7 +331,9 @@ public class EventStatistics {
 				houseCrosses.put(division, value);
 
 				//выделенность зон
-				division = AnalyticsUtil.houseToZone(house.getNumber());
+				value = 0.0;
+				Zone zone = (Zone)new ZoneService().find(house.getZoneId());
+				division = zone.getCode();
 				object = houseZones.get(division);
 				if (object != null)
 					value = (Double)object;

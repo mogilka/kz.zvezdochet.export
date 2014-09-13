@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import kz.zvezdochet.analytics.bean.Element;
+import kz.zvezdochet.bean.Element;
 import kz.zvezdochet.bean.Planet;
 import kz.zvezdochet.bean.Sign;
 import kz.zvezdochet.core.service.DataAccessException;
