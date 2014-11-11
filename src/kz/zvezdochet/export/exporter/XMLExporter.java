@@ -14,6 +14,7 @@ import kz.zvezdochet.bean.Planet;
 import kz.zvezdochet.bean.Sign;
 import kz.zvezdochet.core.bean.Model;
 import kz.zvezdochet.core.service.DataAccessException;
+import kz.zvezdochet.core.util.CalcUtil;
 import kz.zvezdochet.core.util.PlatformUtil;
 import kz.zvezdochet.export.Activator;
 import kz.zvezdochet.service.SignService;
@@ -67,7 +68,8 @@ public class XMLExporter {
 			element.appendChild(document.createTextNode(((House)house).getCode()));
 			element.setAttribute("id", String.valueOf(count++));
 			element.setAttribute("name", ((House)house).getCode());
-			element.setAttribute("coord", String.valueOf(((House)house).getCoord()));
+			double coord = CalcUtil.roundTo(CalcUtil.decToDeg(((House)house).getCoord()), 2);
+			element.setAttribute("coord", String.valueOf(coord));
 			houses.appendChild(element);
 		}
 		root.appendChild(houses);
@@ -81,7 +83,8 @@ public class XMLExporter {
 			element.appendChild(document.createTextNode(((Planet)planet).getCode()));
 			element.setAttribute("id", String.valueOf(count++));
 			element.setAttribute("name", ((Planet)planet).getName());
-			element.setAttribute("coord", String.valueOf(((Planet)planet).getCoord()));
+			double coord = CalcUtil.roundTo(CalcUtil.decToDeg(((Planet)planet).getCoord()), 2);
+			element.setAttribute("coord", String.valueOf(coord));
 			planets.appendChild(element);
 		}
 		root.appendChild(planets);
