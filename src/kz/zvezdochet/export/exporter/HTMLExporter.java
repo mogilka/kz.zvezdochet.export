@@ -6,6 +6,7 @@ import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,7 +38,6 @@ import kz.zvezdochet.bean.Zone;
 import kz.zvezdochet.core.bean.GenderText;
 import kz.zvezdochet.core.bean.Model;
 import kz.zvezdochet.core.bean.TextGenderDictionary;
-import kz.zvezdochet.core.util.CoreUtil;
 import kz.zvezdochet.core.util.DateUtil;
 import kz.zvezdochet.core.util.PlatformUtil;
 import kz.zvezdochet.export.Activator;
@@ -114,7 +114,7 @@ public class HTMLExporter {
 			//содержание
 			row = new Tag("tr");
 			cell = new Tag("td");
-			generateContents(cell);
+			generateContents(event, cell);
 			row.add(cell);
 			table.add(row);
 	
@@ -129,7 +129,7 @@ public class HTMLExporter {
 			generateSignChart(table, signMap);
 			//дома
 			statistics.initPlanetHouses();
-			generateHouseChart(statistics, table);
+//			generateHouseChart(statistics, table);
 			
 			//градус рождения
 			generateDegree(event, table);
@@ -177,10 +177,8 @@ public class HTMLExporter {
 			//конфигурации аспектов
 			//generateAspectConfigurations(event, table);
 			
-			//щит и меч
-			//generateSwordAndShield(event, table);
-			//сила и слабость планет
-			//generatePlanets(event, table);
+			//планеты
+			generatePlanets(event, table);
 			
 			//планеты в домах
 			Map<String, Double> houseMap = statistics.getPlanetHouses();
@@ -255,6 +253,7 @@ public class HTMLExporter {
 				List<Planet> planets = new ArrayList<Planet>();
 				for (Model pmodel : event.getConfiguration().getPlanets()) {
 					Planet planet = (Planet)pmodel;
+					if (planet.getCode().equals("Kethu")) continue;
 					if (planet.getHouse().getId().equals(house.getId()))
 						planets.add(planet);
 				}
@@ -290,7 +289,6 @@ public class HTMLExporter {
 	 * @param event событие
 	 * @param cell тег-контейнер для вложенных тегов
 	 */
-	@SuppressWarnings("unused")
 	private void generatePlanets(Event event, Tag cell) {
 		try {
 			Tag tr = new Tag("tr");
@@ -300,49 +298,42 @@ public class HTMLExporter {
 			td.add(a);
 			tr.add(td);
 			cell.add(tr);
-			
+
 			tr = new Tag("tr");
 			td = new Tag("td");
 			for (Model model : event.getConfiguration().getPlanets()) {
 				Planet planet = (Planet)model;
-				if (planet.isPerfect() && planet.getStrongText() != null) {
-					td.add(util.getBoldTaggedString(planet.getName() + " (сила)"));
-					td.add(util.getNormalTaggedString(planet.getStrongText()));
-				} else if (planet.isDamaged() && planet.getDamagedText() != null) {
-					td.add(util.getBoldTaggedString(planet.getName() + " (поражение)"));
-					td.add(util.getNormalTaggedString(planet.getDamagedText()));
-				} else if (planet.isBroken() && planet.getWeakText() != null) { 
-					td.add(util.getBoldTaggedString(planet.getName() + " (слабость)"));
-					td.add(util.getNormalTaggedString(planet.getWeakText()));
-				} else if (planet.inMine() && planet.getMineText() != null) { 
-					td.add(util.getBoldTaggedString(planet.getName() + " (шахта)"));
+				if (planet.isKernel() && planet.getKernelText() != null) {
+					td.add(util.getBoldTaggedString(planet.getName() + "-ядро"));
+					td.add(util.getNormalTaggedString(planet.getKernelText()));
+				} else if (planet.isSword() && planet.getSwordText() != null) {
+					td.add(util.getBoldTaggedString(planet.getName() + "-меч"));
+					td.add(util.getNormalTaggedString(planet.getSwordText()));
+				} else if (planet.isShield() && planet.getShieldText() != null) {
+					td.add(util.getBoldTaggedString(planet.getName() + "-щит"));
+					td.add(util.getNormalTaggedString(planet.getShieldText()));
+				} else if (planet.isBelt() && planet.getBeltText() != null) {
+					td.add(util.getBoldTaggedString(planet.getName() + "-пояс"));
+					td.add(util.getNormalTaggedString(planet.getBeltText()));
+				} else if (planet.inMine() && planet.getMineText() != null) {
+					td.add(util.getBoldTaggedString(planet.getName() + " в шахте"));
 					td.add(util.getNormalTaggedString(planet.getMineText()));
-				} else if (planet.isRetrograde() && planet.getRetroText() != null) { 
-					td.add(util.getBoldTaggedString(planet.getName() + " (ретроград)"));
+				} else if (planet.isDamaged() && planet.getDamagedText() != null) {
+					td.add(util.getBoldTaggedString(planet.getName() + " поражённый"));
+					td.add(util.getNormalTaggedString(planet.getDamagedText()));
+				} else if (planet.isRetrograde() && planet.getRetroText() != null) {
+					td.add(util.getBoldTaggedString(planet.getName() + "-ретроград"));
 					td.add(util.getNormalTaggedString(planet.getRetroText()));
+				} else if (planet.isPerfect() && planet.getStrongText() != null) {
+					td.add(util.getBoldTaggedString(planet.getName() + "-сила"));
+					td.add(util.getNormalTaggedString(planet.getStrongText()));
+				} else if (planet.isBroken() && planet.getWeakText() != null) { 
+					td.add(util.getBoldTaggedString(planet.getName() + "-слабость"));
+					td.add(util.getNormalTaggedString(planet.getWeakText()));
 				}
 			}
 			tr.add(td);
 			cell.add(tr);
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * Генерация "спутников" Солнца
-	 * @param event событие
-	 * @param cell тег-контейнер для вложенных тегов
-	 */
-	private void generateSwordAndShield(Event event, Tag cell) {
-		try {
-//		WriteLn(report,'<tr><td class=header><a name="shieldnsword">Щит и меч</a></td></tr>');
-//		WriteLn(report,'<tr><td>');
-//		WriteLn(report,'<p class="name">Планета-Меч</p>');
-//		WriteLn(report,'<p class="name">Планета-Щит</p>');
-//		WriteLn(report,'<p class="name">Планета-Ядро</p>');
-//		WriteLn(report,'<p class="name">Планета-Пояс</p>');
-//		WriteLn(report,'</td></tr>');
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -446,25 +437,27 @@ public class HTMLExporter {
 			tr = new Tag("tr");
 			td = new Tag("td");
 			for (SkyPointAspect aspect : event.getConfiguration().getAspects()) {
-				if (aspect.getAspect().getType().getCode().equals(aspectType) ||
+				if (!((Planet)aspect.getSkyPoint1()).isMain()) continue;
+				AspectType type = aspect.getAspect().getType();
+				if (type.getCode().equals(aspectType) ||
 						(aspectType.equals("POSITIVE") &&
 								!((Planet)aspect.getSkyPoint2()).getCode().equals("Lilith") &&
 								!((Planet)aspect.getSkyPoint2()).getCode().equals("Kethu") &&
-								aspect.getAspect().getType().getCode().equals("NEUTRAL")) ||
+								type.getCode().equals("NEUTRAL")) ||
 						(aspectType.equals("NEGATIVE") &&
 								(((Planet)aspect.getSkyPoint2()).getCode().equals("Lilith") ||
 								((Planet)aspect.getSkyPoint2()).getCode().equals("Kethu")) &&
-								aspect.getAspect().getType().getCode().equals("NEUTRAL"))	
+								type.getCode().equals("NEUTRAL"))	
 				) {
 					PlanetAspectText dict = (PlanetAspectText)
 						new PlanetAspectService().find(
 								(Planet)aspect.getSkyPoint1(), 
 								(Planet)aspect.getSkyPoint2(), 
-								aspect.getAspect().getType());
+								type);
 					if (dict != null) {
 						Tag tag = util.getBoldTaggedString(
 							dict.getPlanet1().getName() + " " + 
-							aspect.getAspect().getType().getSymbol() + " " + 
+							type.getSymbol() + " " + 
 							dict.getPlanet2().getName());
 						td.add(tag);
 
@@ -1055,27 +1048,13 @@ public class HTMLExporter {
 
 	/**
 	 * Генерация содержания
+	 * @param event событие
 	 * @param cell ячейка-контейнер таблицы разметки
 	 */
-	private void generateContents(Tag cell) {
+	private void generateContents(Event event, Tag cell) {
 		try {
-			Map<String, String[][]> contents = new HashMap<String, String[][]>();
-			contents.put("Общая информация", new String[][] {
-					new String[] {"celebrity", "Знаменитости"},
-					new String[] {"similar", "Близкие по духу"},
-					new String[] {"signs", "Выраженные Знаки Зодиака"},
-					new String[] {"dsigns", "Кредо вашей жизни"},
-					new String[] {"dhouses", "Чем будет заполнена ваша жизнь"},
-					new String[] {"degree", "Символ рождения"}});
-			contents.put("Космограмма", new String[][] {
-					new String[] {"cosmogram", "Анализ космограммы"},
-					new String[] {"planets", "Планеты"},
-					new String[] {"shieldnsword", "Позиции планет"},
-					new String[] {"aspects", "Аспекты планет"},
-					new String[] {"configurations", "Конфигурации планет"}});
-			
 			//левая часть содержания
-			
+
 			Tag subtable = new Tag("table", "class=menu align=left");
 			Tag tr = new Tag("tr");
 			Tag td = new Tag("td");
@@ -1094,39 +1073,72 @@ public class HTMLExporter {
 			}
 			td.add(new Tag("br"));
 
-			//общая информация, описание космограммы
-			for (String key : contents.keySet()) {
-				b = new Tag("b");
-				b.add(key);
-				td.add(b);
-				for (String[] values : contents.get(key)) {
-					td.add(new Tag("/br"));
-					Tag a = new Tag("a", "href=#" + values[0]);
-					a.add(values[1]);
-					td.add(a);
-				}
-				td.add(new Tag("br"));
+			//общая информация
+			Map<String, String> contents = new HashMap<String, String>();
+			contents.put("celebrity", "Знаменитости");
+			contents.put("similar", "Близкие по духу");
+			contents.put("signs", "Выраженные Знаки Зодиака");
+			contents.put("dsigns", "Кредо вашей жизни");
+			contents.put("degree", "Символ рождения");
+
+			b = new Tag("b");
+			b.add("Общая информация");
+			td.add(b);
+			for (Map.Entry<String, String> entry : contents.entrySet()) {
+				td.add(new Tag("/br"));
+				Tag a = new Tag("a", "href=#" + entry.getKey());
+				a.add(entry.getValue());
+				td.add(a);
 			}
+			td.add(new Tag("br"));
 			tr.add(td);
 			subtable.add(tr);
 			cell.add(subtable);
 	
 			//правая часть содержания
-			
+
 			subtable = new Tag("table", "class=menu align=right");
 			tr = new Tag("tr");
 			td = new Tag("td");
+
+			//описание космограммы
+			contents = new HashMap<String, String>();
+			contents.put("cosmogram", "Анализ космограммы");
+			contents.put("planets", "Планеты");
+			contents.put("aspects", "Аспекты планет");
+			contents.put("configurations", "Конфигурации планет");
 			
+			b = new Tag("b");
+			b.add("Космограмма");
+			td.add(b);
+			for (Map.Entry<String, String> entry : contents.entrySet()) {
+				td.add(new Tag("/br"));
+				Tag a = new Tag("a", "href=#" + entry.getKey());
+				a.add(entry.getValue());
+				td.add(a);
+			}
+			td.add(new Tag("br"));
+
 			b = new Tag("b");
 			b.add("Реализация личности");
 			td.add(b);
-			list = new HouseService().getList();
-			for (Model model : list) {
-				House house = (House)model;
-				td.add(new Tag("/br"));
-				Tag a = new Tag("a", "href=#" + house.getLinkName());
-				a.add(house.getHeaderName());
-				td.add(a);
+			for (Model hmodel : event.getConfiguration().getHouses()) {
+				House house = (House)hmodel;
+				//Определяем количество планет в доме
+				List<Planet> planets = new ArrayList<Planet>();
+				for (Model pmodel : event.getConfiguration().getPlanets()) {
+					Planet planet = (Planet)pmodel;
+					if (planet.getCode().equals("Kethu")) continue;
+					if (planet.getHouse().getId().equals(house.getId()))
+						planets.add(planet);
+				}
+				//Создаем информационный блок только если дом не пуст
+				if (planets.size() > 0) {
+					td.add(new Tag("/br"));
+					Tag a = new Tag("a", "href=#" + house.getLinkName());
+					a.add(house.getHeaderName());
+					td.add(a);
+				}
 			}
 			td.add(new Tag("br"));
 			tr.add(td);
@@ -1162,7 +1174,7 @@ public class HTMLExporter {
 				for (Model model : list) {
 					Event event = (Event)model;
 					p.add(util.getSmallTaggedString(DateUtil.formatDate(event.getBirth())));
-					p.add(util.getBoldTaggedSubstring(event.getName() + " " + event.getSurname()));
+					p.add(util.getBoldTaggedSubstring(event.getName()));
 					p.add(util.getSmallTaggedString("&nbsp;&nbsp;&nbsp;" + event.getDescription()));
 					p.add(new Tag("/br"));
 				}
@@ -1444,6 +1456,7 @@ public class HTMLExporter {
 	 * Генерация вида космограммы
 	 * @param event событие
 	 * @param cell тег-контейнер для вложенных тегов
+	 * TODO фиктивные планеты при определении вида космограмм не считаются!!!
 	 */
 	private void generateCardKarma(Event event, Tag cell) {
 		try {
@@ -1468,7 +1481,7 @@ public class HTMLExporter {
 //				Tag tr = new Tag("tr");
 //				Tag td = new Tag("td", "class=header");
 //				Tag a = new Tag("a", "name=karma");
-//				a.add("Вид космограммы: карма прошлой жизни");
+//				a.add("Карма прошлой жизни");
 //				td.add(a);
 //				tr.add(td);
 //				cell.add(tr);
@@ -1537,7 +1550,7 @@ public class HTMLExporter {
 						Tag tr = new Tag("tr");
 						Tag td = new Tag("td", "class=header");
 						Tag a = new Tag("a", "name=type");
-						a.add("Тип космограммы: самораскрытие человека");
+						a.add("Самораскрытие человека");
 						td.add(a);
 						tr.add(td);
 						cell.add(tr);
@@ -1601,11 +1614,14 @@ public class HTMLExporter {
 		    	if (codes.length == elements.length) {
 		    		boolean match = true;
 		    		for (String code : codes)
-		    			if (!CoreUtil.isArrayContainsString(elements, code)) {
+		    			if (!Arrays.asList(elements).contains(code)) {
 		    				match = false;
 		    				break;
 		    			}
-		    		if (!match) continue; else break;
+		    		if (match)
+		    			break;
+		    		else
+		    			continue;
 		    	}
 		    }
 			
@@ -1634,6 +1650,10 @@ public class HTMLExporter {
 			
 			tr = new Tag("tr");
 			td = new Tag("td");
+			a = new Tag("p");
+			a.add("Темперамент: " + element.getTemperament());
+			td.add(a);
+			
 //			Tag chart = util.getTaggedChart(17, bars, null);
 			Tag chart = util.getPlotkitChart(bars, null, "pie", "elemchart", "elemchartopts", "drawElemChart", 5, 300);
 			td.add(chart);
@@ -1701,7 +1721,7 @@ public class HTMLExporter {
 	}
 
 	/**
-	 * Печать текста для мужчин и женщин
+	 * Печать текста для мужчин, женщин, детей
 	 * @param text объект текста для разных полов
 	 * @param event событие
 	 * @param cell тег-контейнер для вложенных тегов
@@ -1711,9 +1731,10 @@ public class HTMLExporter {
 			boolean isMale = !event.isFemale();
 			String male = text.getMaletext();
 			String female = text.getFemaletext();
-			Tag tag = util.getGenderHeader(isMale, male, female);
+			String child = text.getChildtext();
+			Tag tag = util.getGenderHeader(isMale, male, female, child);
 			if (tag != null) cell.add(tag);					//gender header
-			tag = util.getGenderText(isMale, male, female);
+			tag = util.getGenderText(isMale, male, female, child);
 			if (tag != null) cell.add(tag);					//gender
 		}
 	}
@@ -1759,7 +1780,7 @@ public class HTMLExporter {
 				for (Model model : list) {
 					Event event = (Event)model;
 					p.add(util.getSmallTaggedString(DateUtil.formatDate(event.getBirth())));
-					p.add(util.getBoldTaggedSubstring(event.getName() + " " + event.getSurname()));
+					p.add(util.getBoldTaggedSubstring(event.getName()));
 					p.add(util.getSmallTaggedString("&nbsp;&nbsp;&nbsp;" + event.getDescription()));
 					p.add(new Tag("/br"));
 				}
