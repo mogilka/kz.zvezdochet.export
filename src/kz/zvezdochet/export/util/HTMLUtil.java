@@ -18,7 +18,7 @@ public class HTMLUtil {
 	 * @return тег абзаца
 	 */
 	public Tag getBoldTaggedString(String value) {
-		Tag tag = new Tag("p", "class=name");
+		Tag tag = new Tag("h4");
 		tag.add(value);
 		return tag;
 	}
@@ -111,11 +111,14 @@ public class HTMLUtil {
 	/**
 	 * Создание заголовка для текста, который относится к мужчинам и женщинам
 	 * @param isMale признак того, что человек мужского пола
-	 * @param femaleText текст для женщин
 	 * @param maleText текст для мужчин
+	 * @param femaleText текст для женщин
+	 * @param childText текст для детей
 	 * @return тег заголовка
 	 */
-	public Tag getGenderHeader(boolean isMale, String maleText, String femaleText) {
+	public Tag getGenderHeader(boolean isMale, String maleText, String femaleText, String childText) {
+	    if (childText != null && childText.length() > 0)
+			return getBoldTaggedString("Ребёнок");
 		if (isMale) {
 			if (maleText != null && maleText.length() > 0)  
 				return getBoldTaggedString("Мужчина");
@@ -129,11 +132,14 @@ public class HTMLUtil {
 	/**
 	 * Создание текста, который относится к мужчинам и женщинам
 	 * @param isMale признак того, что человек мужского пола
-	 * @param femaleText текст для женщин
 	 * @param maleText текст для мужчин
+	 * @param femaleText текст для женщин
+	 * @param childText текст для детей
 	 * @return тег
 	 */
-	public Tag getGenderText(boolean isMale, String maleText, String femaleText) {
+	public Tag getGenderText(boolean isMale, String maleText, String femaleText, String childText) {
+	    if (childText != null && childText.length() > 0)
+			return getNormalTaggedString(childText);
 		if (isMale) {
 		    if (maleText != null && maleText.length() > 0) 
 				return getNormalTaggedString(maleText);
