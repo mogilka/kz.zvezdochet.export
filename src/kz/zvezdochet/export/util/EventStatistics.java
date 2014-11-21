@@ -11,6 +11,7 @@ import kz.zvezdochet.bean.Halfsphere;
 import kz.zvezdochet.bean.House;
 import kz.zvezdochet.bean.Planet;
 import kz.zvezdochet.bean.Sign;
+import kz.zvezdochet.bean.SkyPoint;
 import kz.zvezdochet.bean.Square;
 import kz.zvezdochet.bean.YinYang;
 import kz.zvezdochet.bean.Zone;
@@ -25,7 +26,6 @@ import kz.zvezdochet.service.SignService;
 import kz.zvezdochet.service.SquareService;
 import kz.zvezdochet.service.YinYangService;
 import kz.zvezdochet.service.ZoneService;
-import kz.zvezdochet.util.AstroUtil;
 import kz.zvezdochet.util.Configuration;
 
 /**
@@ -98,7 +98,7 @@ public class EventStatistics {
 					House house1 = (House)conf.getHouses().get(i);
 					int j = (i == conf.getHouses().size() - 1) ? 0 : i + 1;
 					House house2 = (House)conf.getHouses().get(j);
-					if (AstroUtil.getSkyPointHouse(house1.getCoord(), house2.getCoord(), planet.getCoord())) { 
+					if (SkyPoint.getHouse(house1.getCoord(), house2.getCoord(), planet.getCoord())) { 
 						planet.setHouse(house1);
 						double value = 0.0;
 						Object object = planetHouses.get(house1.getCode());

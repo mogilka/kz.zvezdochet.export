@@ -31,6 +31,7 @@ import kz.zvezdochet.bean.Halfsphere;
 import kz.zvezdochet.bean.House;
 import kz.zvezdochet.bean.Planet;
 import kz.zvezdochet.bean.Sign;
+import kz.zvezdochet.bean.SkyPoint;
 import kz.zvezdochet.bean.SkyPointAspect;
 import kz.zvezdochet.bean.Square;
 import kz.zvezdochet.bean.YinYang;
@@ -55,7 +56,6 @@ import kz.zvezdochet.service.SignService;
 import kz.zvezdochet.service.SquareService;
 import kz.zvezdochet.service.YinYangService;
 import kz.zvezdochet.service.ZoneService;
-import kz.zvezdochet.util.AstroUtil;
 
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Display;
@@ -212,7 +212,7 @@ public class HTMLExporter {
 				//Определяем количество планет в доме
 				if (houseMap.get(house.getCode()) != null) continue;
 				//Создаем информационный блок только если дом пуст
-				Sign sign = AstroUtil.getSkyPointSign(house.getCoord());
+				Sign sign = SkyPoint.getSign(house.getCoord());
 				Planet planet = new AnalyticsService().getSignPlanet(sign, "HOME");
 				if (null == planet) continue;
 				
@@ -1584,7 +1584,7 @@ public class HTMLExporter {
 			Tag tr = new Tag("tr");
 			Tag td = new Tag("td", "class=header");
 			Tag a = new Tag("a", "name=elements");
-			a.add("Стихии");
+			a.add("Темперамент");
 			td.add(a);
 			tr.add(td);
 			cell.add(tr);
@@ -1643,7 +1643,7 @@ public class HTMLExporter {
 		    tr = new Tag("tr");
 			td = new Tag("td", "class=header");
 			a = new Tag("a");
-			a.add("Стихии в сознании человека");
+			a.add("Темперамент в сознании");
 			td.add(a);
 			tr.add(td);
 			cell.add(tr);
@@ -1651,7 +1651,7 @@ public class HTMLExporter {
 			tr = new Tag("tr");
 			td = new Tag("td");
 			a = new Tag("p");
-			a.add("Темперамент: " + element.getTemperament());
+			a.add(element.getTemperament());
 			td.add(a);
 			
 //			Tag chart = util.getTaggedChart(17, bars, null);
@@ -1679,7 +1679,7 @@ public class HTMLExporter {
 		    tr = new Tag("tr");
 			td = new Tag("td", "class=header");
 			a = new Tag("a");
-			a.add("Стихии в поступках человека");
+			a.add("Темперамент в поступках");
 			td.add(a);
 			tr.add(td);
 			cell.add(tr);
