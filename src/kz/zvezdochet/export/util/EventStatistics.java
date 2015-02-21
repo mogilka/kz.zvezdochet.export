@@ -2,6 +2,7 @@ package kz.zvezdochet.export.util;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -92,12 +93,13 @@ public class EventStatistics {
 	public void initPlanetHouses() throws DataAccessException {
 		if (conf.getPlanets() != null) {
 			planetHouses = new HashMap<String, Double>();
+			List<Model> houses = conf.getHouses();
 			for (Model model : conf.getPlanets()) {
 				Planet planet = (Planet)model;
-				for (int i = 0; i < conf.getHouses().size(); i++) {
-					House house1 = (House)conf.getHouses().get(i);
-					int j = (i == conf.getHouses().size() - 1) ? 0 : i + 1;
-					House house2 = (House)conf.getHouses().get(j);
+				for (int i = 0; i < houses.size(); i++) {
+					House house1 = (House)houses.get(i);
+					int j = (i == houses.size() - 1) ? 0 : i + 1;
+					House house2 = (House)houses.get(j);
 					if (SkyPoint.getHouse(house1.getCoord(), house2.getCoord(), planet.getCoord())) { 
 						planet.setHouse(house1);
 						double value = 0.0;
