@@ -20,15 +20,14 @@ public class ExportService {
 
 	public List<Object> getPlanetInSignText(Planet planet, Sign sign) throws DataAccessException {
 /*
- * select Categories.Priority, Categories.Name, Categories.Code, 
-PlanetSigns.Text, TextGender.Male, TextGender.Female 
-from (((PlanetSigns inner join Categories on PlanetSigns.TypeID = Categories.ID) 
-inner join Signs on PlanetSigns.SignID = Signs.ID) 
-left join TextGender on PlanetSigns.GenderID = TextGender.ID) 
-inner join Planets on Categories.ObjectID = Planets.ID 
-where Signs.Code = 'Leo'
-and Planets.Code = 'Mercury'
-order by Categories.Priority
+select categories.Name, categories.Code, 
+planetsigns.Text, textgender.Male, textgender.Female, textgender.child
+from planetsigns 
+inner join categories on planetsigns.TypeID = categories.id
+left join textgender on planetsigns.GenderID = textgender.id
+where planetsigns.SignID = 6
+and categories.ObjectID = 23
+order by categories.Priority
  */
         List<Object> list = new ArrayList<Object>();
         PreparedStatement ps = null;
@@ -36,14 +35,13 @@ order by Categories.Priority
 		String sql;
 		try {
 			sql =	
-				"select categories.priority, categories.name, categories.code, " +
+				"select categories.name, categories.code, " +
 					"planetsigns.text, textgender.male, textgender.female " +
-				"from (((planetsigns inner join categories on planetsigns.typeid = categories.id) " +
-					"inner join signs on planetsigns.signid = signs.id) " +
+				"from planetsigns " +
+					"inner join categories on planetsigns.typeid = categories.id) " +
 					"left join textgender on planetsigns.genderid = textgender.id) " +
-					"inner join planets on categories.objectid = planets.id " +
-				"where signs.code = '" + sign.getCode() + "' " +
-					"and planets.code = '" + planet.getCode() + "' " +
+				"where planetsigns.signid = '" + sign.getId() + "' " +
+					"and categories.objectid = '" + planet.getId() + "' " +
 				"order by categories.priority";
 			ps = Connector.getInstance().getConnection().prepareStatement(sql);
 			rs = ps.executeQuery();
