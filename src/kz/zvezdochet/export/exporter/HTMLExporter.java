@@ -1379,8 +1379,8 @@ public class HTMLExporter {
 								td.add(p);
 								
 								GenderText genderText = new GenderText();
-								genderText.setMaletext((String)row.get(4));
-								genderText.setFemaletext((String)row.get(5));
+								genderText.setText((String)row.get(4));
+								genderText.setType((String)row.get(5));
 								printGenderText(genderText, event, td);
 								td.add(new Tag("/br"));
 								tr.add(td);
@@ -1729,9 +1729,9 @@ public class HTMLExporter {
 	private void printGenderText(GenderText text, Event event, Tag cell) {
 		if (text != null) {
 			boolean isMale = !event.isFemale();
-			String male = text.getMaletext();
-			String female = text.getFemaletext();
-			String child = text.getChildtext();
+			String male = text.getText();
+			String female = text.getType();
+//			String child = text.getObjectId();
 			Tag tag = util.getGenderHeader(isMale, male, female, child);
 			if (tag != null) cell.add(tag);					//gender header
 			tag = util.getGenderText(isMale, male, female, child);
