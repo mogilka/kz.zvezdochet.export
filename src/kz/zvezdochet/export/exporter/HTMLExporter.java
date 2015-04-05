@@ -17,12 +17,16 @@ import java.util.Map.Entry;
 import kz.zvezdochet.analytics.bean.Category;
 import kz.zvezdochet.analytics.bean.PlanetAspectText;
 import kz.zvezdochet.analytics.bean.PlanetHouseText;
+import kz.zvezdochet.analytics.bean.PlanetSignText;
+import kz.zvezdochet.analytics.bean.PlanetText;
 import kz.zvezdochet.analytics.service.AnalyticsService;
 import kz.zvezdochet.analytics.service.CardTypeService;
 import kz.zvezdochet.analytics.service.CategoryService;
 import kz.zvezdochet.analytics.service.DegreeService;
 import kz.zvezdochet.analytics.service.PlanetAspectService;
 import kz.zvezdochet.analytics.service.PlanetHouseService;
+import kz.zvezdochet.analytics.service.PlanetSignService;
+import kz.zvezdochet.analytics.service.PlanetTextService;
 import kz.zvezdochet.bean.AspectType;
 import kz.zvezdochet.bean.Cross;
 import kz.zvezdochet.bean.Element;
@@ -36,14 +40,13 @@ import kz.zvezdochet.bean.SkyPointAspect;
 import kz.zvezdochet.bean.Square;
 import kz.zvezdochet.bean.YinYang;
 import kz.zvezdochet.bean.Zone;
-import kz.zvezdochet.core.bean.GenderText;
 import kz.zvezdochet.core.bean.Model;
+import kz.zvezdochet.core.bean.TextGender;
 import kz.zvezdochet.core.bean.TextGenderDictionary;
 import kz.zvezdochet.core.util.DateUtil;
 import kz.zvezdochet.core.util.PlatformUtil;
 import kz.zvezdochet.export.Activator;
 import kz.zvezdochet.export.bean.Bar;
-import kz.zvezdochet.export.service.ExportService;
 import kz.zvezdochet.export.util.EventStatistics;
 import kz.zvezdochet.export.util.HTMLUtil;
 import kz.zvezdochet.service.AspectTypeService;
@@ -68,6 +71,7 @@ import org.eclipse.swt.widgets.Display;
 @SuppressWarnings("unchecked")
 public class HTMLExporter {
 	private HTMLUtil util;
+	private boolean child = false;
 
 	public HTMLExporter() {
 		util = new HTMLUtil();
@@ -78,6 +82,7 @@ public class HTMLExporter {
 	 * @param event событие
 	 */
 	public void generate(Event event) {
+		child = event.getAge() < event.MAX_TEEN_AGE;
 		try {
 			Tag html = new Tag("html");
 			Tag head = new Tag("head");
@@ -187,7 +192,7 @@ public class HTMLExporter {
 			//generateHouseInSigns(event, table, houseMap);
 			
 			if (html != null) {
-				//System.out.println(html);
+//				System.out.println(html);
 				export(html.toString());
 			}
 		} catch(Exception e) {
@@ -212,7 +217,7 @@ public class HTMLExporter {
 				//Определяем количество планет в доме
 				if (houseMap.get(house.getCode()) != null) continue;
 				//Создаем информационный блок только если дом пуст
-				Sign sign = SkyPoint.getSign(house.getCoord());
+				Sign sign = SkyPoint.getSign(house.getCoord(), event.getBirthYear());
 				Planet planet = new AnalyticsService().getSignPlanet(sign, "HOME");
 				if (null == planet) continue;
 				
@@ -227,7 +232,10 @@ public class HTMLExporter {
 					td.add(util.getBoldTaggedString(
 							house.getShortName() + " в знаке " + sign.getName()));
 					td.add(util.getNormalTaggedString(dict.getText()));
-					printGenderText(dict.getGenderText(), event, td);		
+					
+					List<TextGender> genders = dict.getGenderTexts(event.isFemale(), child);
+					for (TextGender gender : genders)
+						printGenderText(gender, event, td);
 					td.add(new Tag("/br"));
 					tr.add(td);
 					cell.add(tr);
@@ -271,7 +279,10 @@ public class HTMLExporter {
 							td.add(util.getBoldTaggedString(
 								planet.getName() + " " + house.getCombination()));
 							td.add(util.getNormalTaggedString(dict.getText()));
-							printGenderText(dict.getGenderText(), event, td);		
+							
+							List<TextGender> genders = dict.getGenderTexts(event.isFemale(), child);
+							for (TextGender gender : genders)
+								printGenderText(gender, event, td);
 							td.add(new Tag("/br"));
 						}
 					}
@@ -301,35 +312,64 @@ public class HTMLExporter {
 
 			tr = new Tag("tr");
 			td = new Tag("td");
+			PlanetTextService service = new PlanetTextService();
 			for (Model model : event.getConfiguration().getPlanets()) {
 				Planet planet = (Planet)model;
-				if (planet.isKernel() && planet.getKernelText() != null) {
-					td.add(util.getBoldTaggedString(planet.getName() + "-ядро"));
-					td.add(util.getNormalTaggedString(planet.getKernelText()));
-				} else if (planet.isSword() && planet.getSwordText() != null) {
-					td.add(util.getBoldTaggedString(planet.getName() + "-меч"));
-					td.add(util.getNormalTaggedString(planet.getSwordText()));
-				} else if (planet.isShield() && planet.getShieldText() != null) {
-					td.add(util.getBoldTaggedString(planet.getName() + "-щит"));
-					td.add(util.getNormalTaggedString(planet.getShieldText()));
-				} else if (planet.isBelt() && planet.getBeltText() != null) {
-					td.add(util.getBoldTaggedString(planet.getName() + "-пояс"));
-					td.add(util.getNormalTaggedString(planet.getBeltText()));
-				} else if (planet.inMine() && planet.getMineText() != null) {
-					td.add(util.getBoldTaggedString(planet.getName() + " в шахте"));
-					td.add(util.getNormalTaggedString(planet.getMineText()));
-				} else if (planet.isDamaged() && planet.getDamagedText() != null) {
-					td.add(util.getBoldTaggedString(planet.getName() + " поражённый"));
-					td.add(util.getNormalTaggedString(planet.getDamagedText()));
-				} else if (planet.isRetrograde() && planet.getRetroText() != null) {
-					td.add(util.getBoldTaggedString(planet.getName() + "-ретроград"));
-					td.add(util.getNormalTaggedString(planet.getRetroText()));
-				} else if (planet.isPerfect() && planet.getStrongText() != null) {
-					td.add(util.getBoldTaggedString(planet.getName() + "-сила"));
-					td.add(util.getNormalTaggedString(planet.getStrongText()));
-				} else if (planet.isBroken() && planet.getWeakText() != null) { 
-					td.add(util.getBoldTaggedString(planet.getName() + "-слабость"));
-					td.add(util.getNormalTaggedString(planet.getWeakText()));
+				PlanetText planetText;
+				if (planet.isKernel()) {
+					planetText = (PlanetText)service.findByPlanet(planet.getId(), "kernel");
+					if (planetText != null) {
+						td.add(util.getBoldTaggedString(planet.getName() + "-ядро"));
+						td.add(util.getNormalTaggedString(planetText.getText()));
+					}
+				} else if (planet.isSword()) {
+					planetText = (PlanetText)service.findByPlanet(planet.getId(), "sword");
+					if (planetText != null) {
+						td.add(util.getBoldTaggedString(planet.getName() + "-меч"));
+						td.add(util.getNormalTaggedString(planetText.getText()));
+					}
+				} else if (planet.isShield()) {
+					planetText = (PlanetText)service.findByPlanet(planet.getId(), "shield");
+					if (planetText != null) {
+						td.add(util.getBoldTaggedString(planet.getName() + "-щит"));
+						td.add(util.getNormalTaggedString(planetText.getText()));
+					}
+				} else if (planet.isBelt()) {
+					planetText = (PlanetText)service.findByPlanet(planet.getId(), "belt");
+					if (planetText != null) {
+						td.add(util.getBoldTaggedString(planet.getName() + "-пояс"));
+						td.add(util.getNormalTaggedString(planetText.getText()));
+					}
+				} else if (planet.inMine()) {
+					planetText = (PlanetText)service.findByPlanet(planet.getId(), "mine");
+					if (planetText != null) {
+						td.add(util.getBoldTaggedString(planet.getName() + " в шахте"));
+						td.add(util.getNormalTaggedString(planetText.getText()));
+					}
+				} else if (planet.isDamaged()) {
+					planetText = (PlanetText)service.findByPlanet(planet.getId(), "damaged");
+					if (planetText != null) {
+						td.add(util.getBoldTaggedString(planet.getName() + " поражённый"));
+						td.add(util.getNormalTaggedString(planetText.getText()));
+					}
+				} else if (planet.isRetrograde()) {
+					planetText = (PlanetText)service.findByPlanet(planet.getId(), "retro");
+					if (planetText != null) {
+						td.add(util.getBoldTaggedString(planet.getName() + "-ретроград"));
+						td.add(util.getNormalTaggedString(planetText.getText()));
+					}
+				} else if (planet.isPerfect()) {
+					planetText = (PlanetText)service.findByPlanet(planet.getId(), "perfect");
+					if (planetText != null) {
+						td.add(util.getBoldTaggedString(planet.getName() + "-сила"));
+						td.add(util.getNormalTaggedString(planetText.getText()));
+					}
+				} else if (planet.isBroken()) { 
+					planetText = (PlanetText)service.findByPlanet(planet.getId(), "weak");
+					if (planetText != null) {
+						td.add(util.getBoldTaggedString(planet.getName() + "-слабость"));
+						td.add(util.getNormalTaggedString(planetText.getText()));
+					}
 				}
 			}
 			tr.add(td);
@@ -463,7 +503,10 @@ public class HTMLExporter {
 
 						tag = util.getNormalTaggedString(dict.getText());
 						td.add(tag);
-						printGenderText(dict.getGenderText(), event, td);
+
+						List<TextGender> genders = dict.getGenderTexts(event.isFemale(), child);
+						for (TextGender gender : genders)
+							printGenderText(gender, event, td);
 						td.add(new Tag("/br"));
 					}
 				}
@@ -517,7 +560,10 @@ public class HTMLExporter {
 				td = new Tag("td");
 				td.add(util.getBoldTaggedString(zone.getDescription()));
 				td.add(util.getNormalTaggedString(zone.getText()));
-				printGenderText(zone.getGenderText(), event, td);
+
+				List<TextGender> genders = zone.getGenderTexts(event.isFemale(), child);
+				for (TextGender gender : genders)
+					printGenderText(gender, event, td);
 				tr.add(td);
 				cell.add(tr);
 
@@ -615,7 +661,10 @@ public class HTMLExporter {
 				td = new Tag("td");
 				td.add(util.getBoldTaggedString(cross.getDescription()));
 				td.add(util.getNormalTaggedString(cross.getText()));
-				printGenderText(cross.getGenderText(), event, td);
+
+				List<TextGender> genders = cross.getGenderTexts(event.isFemale(), child);
+				for (TextGender gender : genders)
+					printGenderText(gender, event, td);
 				tr.add(td);
 				cell.add(tr);
 		    }
@@ -753,7 +802,10 @@ public class HTMLExporter {
 				td = new Tag("td");
 				td.add(util.getBoldTaggedString(square.getDescription()));
 				td.add(util.getNormalTaggedString(square.getText()));
-				printGenderText(square.getGenderText(), event, td);
+				
+				List<TextGender> genders = square.getGenderTexts(event.isFemale(), child);
+				for (TextGender gender : genders)
+					printGenderText(gender, event, td);
 				tr.add(td);
 				cell.add(tr);
 
@@ -896,7 +948,10 @@ public class HTMLExporter {
 				td = new Tag("td");
 				td.add(util.getBoldTaggedString(sphere.getDescription()));
 				td.add(util.getNormalTaggedString(sphere.getText()));
-				printGenderText(sphere.getGenderText(), event, td);
+				
+				List<TextGender> genders = sphere.getGenderTexts(event.isFemale(), child);
+				for (TextGender gender : genders)
+					printGenderText(gender, event, td);
 				tr.add(td);
 				cell.add(tr);
 
@@ -992,7 +1047,10 @@ public class HTMLExporter {
 				td = new Tag("td");
 				td.add(util.getBoldTaggedString(yinyang.getDescription()));
 				td.add(util.getNormalTaggedString(yinyang.getText()));
-				printGenderText(yinyang.getGenderText(), event, td);
+				
+				List<TextGender> genders = yinyang.getGenderTexts(event.isFemale(), child);
+				for (TextGender gender : genders)
+					printGenderText(gender, event, td);
 				tr.add(td);
 				cell.add(tr);
 
@@ -1360,28 +1418,28 @@ public class HTMLExporter {
 	private void generatePlanetsInSigns(Event event, Tag cell) {
 		try {
 			if (event.getConfiguration().getPlanets() != null) {
+				PlanetSignService service = new PlanetSignService();
 				for (Model model : event.getConfiguration().getPlanets()) {
 					Planet planet = (Planet)model;
 				    if (planet.isMain()) {
-				    	List<Object> list = new ExportService().getPlanetInSignText(planet, planet.getSign());
-				    	if (list != null && list.size() > 0) 
-				    		for (Object object : list) {
-				    			List<Object> row = (List<Object>)object;
+				    	List<PlanetSignText> list = service.find(planet, planet.getSign());
+				    	if (list != null && list.size() > 0)
+				    		for (PlanetSignText object : list) {
+				    			Category category = object.getCategory();
 								Tag tr = util.getTaggedHeader(
-										row.get(1).toString(),	//description
-										row.get(2).toString());	//linkname
+										category.getName(),	//описание
+										category.getCode()); //ссылка
 								cell.add(tr);
 	
 								tr = new Tag("tr");
 								Tag td = new Tag("td");
 								Tag p = new Tag("p");
-								p.add(row.get(3).toString());	//text
+								p.add(object.getText()); //текст
 								td.add(p);
 								
-								GenderText genderText = new GenderText();
-								genderText.setText((String)row.get(4));
-								genderText.setType((String)row.get(5));
-								printGenderText(genderText, event, td);
+								List<TextGender> genders = object.getGenderTexts(event.isFemale(), child);
+								for (TextGender gender : genders)
+									printGenderText(gender, event, td);
 								td.add(new Tag("/br"));
 								tr.add(td);
 								cell.add(tr);
@@ -1633,7 +1691,9 @@ public class HTMLExporter {
 				p.add(tag);
 				tag = util.getNormalTaggedString(element.getText());
 				p.add(tag);
-				printGenderText(element.getGenderText(), event, p);
+				List<TextGender> genders = element.getGenderTexts(event.isFemale(), child);
+				for (TextGender gender : genders)
+					printGenderText(gender, event, p);
 				td.add(p);
 				tr.add(td);
 				cell.add(tr);
@@ -1722,20 +1782,18 @@ public class HTMLExporter {
 
 	/**
 	 * Печать текста для мужчин, женщин, детей
-	 * @param text объект текста для разных полов
+	 * @param gender объект текста для разных полов
 	 * @param event событие
 	 * @param cell тег-контейнер для вложенных тегов
 	 */
-	private void printGenderText(GenderText text, Event event, Tag cell) {
-		if (text != null) {
-			boolean isMale = !event.isFemale();
-			String male = text.getText();
-			String female = text.getType();
-//			String child = text.getObjectId();
-			Tag tag = util.getGenderHeader(isMale, male, female, child);
-			if (tag != null) cell.add(tag);					//gender header
-			tag = util.getGenderText(isMale, male, female, child);
-			if (tag != null) cell.add(tag);					//gender
+	private void printGenderText(TextGender gender, Event event, Tag cell) {
+		if (gender != null) {
+			Tag tag = util.getGenderHeader(gender.getType());
+			if (tag != null)
+				cell.add(tag); //заголовок
+			tag = util.getNormalTaggedString(gender.getText());
+			if (tag != null)
+				cell.add(tag); //текст
 		}
 	}
 
@@ -1750,7 +1808,7 @@ public class HTMLExporter {
 		script.add("var year = new Date().getYear(); if (year < 1000) year += 1900; document.write(year);");
 		cell.add(script);
 		cell.add("Астрологический сервис" + "&nbsp;");
-		Tag a = new Tag("a", "href=http://zvezdochet.kz/ target=_blank");
+		Tag a = new Tag("a", "href=http://zvezdochet.guru/ target=_blank");
 		a.add("«Звездочёт»");
 		cell.add(a);
 		cell.add(" &mdash; Взгляни на себя в прошлом, настоящем и будущем");

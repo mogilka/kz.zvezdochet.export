@@ -18,7 +18,7 @@ public class HTMLUtil {
 	 * @return тег абзаца
 	 */
 	public Tag getBoldTaggedString(String value) {
-		Tag tag = new Tag("h4");
+		Tag tag = new Tag("h5");
 		tag.add(value);
 		return tag;
 	}
@@ -110,46 +110,20 @@ public class HTMLUtil {
 
 	/**
 	 * Создание заголовка для текста, который относится к мужчинам и женщинам
-	 * @param isMale признак того, что человек мужского пола
-	 * @param maleText текст для мужчин
-	 * @param femaleText текст для женщин
-	 * @param childText текст для детей
+	 * @param type тип толкования
 	 * @return тег заголовка
 	 */
-	public Tag getGenderHeader(boolean isMale, String maleText, String femaleText, String childText) {
-	    if (childText != null && childText.length() > 0)
-			return getBoldTaggedString("Ребёнок");
-		if (isMale) {
-			if (maleText != null && maleText.length() > 0)  
-				return getBoldTaggedString("Мужчина");
-		} else {
-			if (femaleText != null && femaleText.length() > 0)  
-				return getBoldTaggedString("Женщина");
-		}
-		return null;
+	public Tag getGenderHeader(String type) {
+		String typeh = "";
+	    if (type.equals("male"))
+	    	typeh = "Мужчина";
+	    else if (type.equals("female"))
+	    	typeh = "Женщина";
+	    else if (type.equals("child"))
+	    	typeh = "Ребёнок";
+		return getBoldTaggedString(typeh);
 	}
 
-	/**
-	 * Создание текста, который относится к мужчинам и женщинам
-	 * @param isMale признак того, что человек мужского пола
-	 * @param maleText текст для мужчин
-	 * @param femaleText текст для женщин
-	 * @param childText текст для детей
-	 * @return тег
-	 */
-	public Tag getGenderText(boolean isMale, String maleText, String femaleText, String childText) {
-	    if (childText != null && childText.length() > 0)
-			return getNormalTaggedString(childText);
-		if (isMale) {
-		    if (maleText != null && maleText.length() > 0) 
-				return getNormalTaggedString(maleText);
-		} else {
-			if (femaleText != null && femaleText.length() > 0)  
-				return getNormalTaggedString(femaleText);
-		}
-		return null;
-	}
-		
 	/**
 	 * Определение строки, сочетающейся с величиной возраста
 	 * @param age возраст
