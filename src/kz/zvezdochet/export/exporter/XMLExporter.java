@@ -99,7 +99,7 @@ public class XMLExporter {
 			element.appendChild(document.createTextNode(((Sign)sign).getCode()));
 			element.setAttribute("id", String.valueOf(count++));
 			element.setAttribute("name", ((Sign)sign).getName());
-			element.setAttribute("coord", String.valueOf(((Sign)sign).getInitialPoint()));
+			element.setAttribute("coord", String.valueOf(((Sign)sign).getI0()));
 			signs.appendChild(element);
 		}
 		root.appendChild(signs);
