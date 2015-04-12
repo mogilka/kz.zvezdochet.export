@@ -272,9 +272,9 @@ public class HTMLExporter {
 			
 					tr = new Tag("tr");
 					Tag td = new Tag("td");
+					PlanetHouseService service = new PlanetHouseService();
 					for (Planet planet : planets) {
-						PlanetHouseText dict = (PlanetHouseText)
-							new PlanetHouseService().find(planet, house, null);
+						PlanetHouseText dict = (PlanetHouseText)service.find(planet, house, null);
 						if (dict != null) {
 							td.add(util.getBoldTaggedString(
 								planet.getName() + " " + house.getCombination()));
@@ -1710,7 +1710,7 @@ public class HTMLExporter {
 			
 			tr = new Tag("tr");
 			td = new Tag("td");
-			a = new Tag("p");
+			a = new Tag("h5");
 			a.add(element.getTemperament());
 			td.add(a);
 			
