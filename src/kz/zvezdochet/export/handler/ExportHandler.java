@@ -29,10 +29,11 @@ public class ExportHandler extends Handler {
 				return;
 			}
 			updateStatus("Экспорт индивидуального гороскопа", false);
-    		BusyIndicator.showWhile(Display.getDefault(), new Runnable() {
+			final Display display = Display.getDefault();
+    		BusyIndicator.showWhile(display, new Runnable() {
     			@Override
     			public void run() {
-	        		new HTMLExporter().generate(event);
+	        		new HTMLExporter(display).generate(event);
     			}
     		});
 			updateStatus("Экспорт завершён", false);

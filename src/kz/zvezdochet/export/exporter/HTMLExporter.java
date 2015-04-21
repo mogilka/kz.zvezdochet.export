@@ -4,6 +4,7 @@ import html.Tag;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,8 +60,15 @@ import kz.zvezdochet.service.SignService;
 import kz.zvezdochet.service.SquareService;
 import kz.zvezdochet.service.YinYangService;
 import kz.zvezdochet.service.ZoneService;
+import kz.zvezdochet.util.Cosmogram;
 
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.widgets.Display;
 
 /**
@@ -72,8 +80,10 @@ import org.eclipse.swt.widgets.Display;
 public class HTMLExporter {
 	private HTMLUtil util;
 	private boolean child = false;
+	private Display display;
 
-	public HTMLExporter() {
+	public HTMLExporter(Display display) {
+		this.display = display;
 		util = new HTMLUtil();
 	}
 
@@ -82,6 +92,21 @@ public class HTMLExporter {
 	 * @param event событие
 	 */
 	public void generate(Event event) {
+	    Image image = new Image(display, Cosmogram.HEIGHT, Cosmogram.HEIGHT);
+	    GC gc = new GC(image);
+	    gc.setBackground(new Color(display, 204, 204, 255));
+	    gc.fillRectangle(image.getBounds());
+		new Cosmogram(event.getConfiguration(), null, gc);
+		ImageLoader loader = new ImageLoader();
+	    loader.data = new ImageData[] {image.getImageData()};
+	    try {
+			String card = PlatformUtil.getPath(Activator.PLUGIN_ID, "/out/card.png").getPath();
+		    loader.save(card, SWT.IMAGE_PNG);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+	    image.dispose();
+
 		child = event.getAge() < event.MAX_TEEN_AGE;
 		try {
 			Tag html = new Tag("html");
