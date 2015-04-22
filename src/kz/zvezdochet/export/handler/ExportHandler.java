@@ -33,7 +33,7 @@ public class ExportHandler extends Handler {
     		BusyIndicator.showWhile(display, new Runnable() {
     			@Override
     			public void run() {
-	        		new HTMLExporter(display).generate(event);
+    				new HTMLExporter(display).generate(event);
     			}
     		});
 			updateStatus("Экспорт завершён", false);

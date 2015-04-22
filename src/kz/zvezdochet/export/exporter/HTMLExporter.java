@@ -92,22 +92,8 @@ public class HTMLExporter {
 	 * @param event событие
 	 */
 	public void generate(Event event) {
-	    Image image = new Image(display, Cosmogram.HEIGHT, Cosmogram.HEIGHT);
-	    GC gc = new GC(image);
-	    gc.setBackground(new Color(display, 204, 204, 255));
-	    gc.fillRectangle(image.getBounds());
-		new Cosmogram(event.getConfiguration(), null, gc);
-		ImageLoader loader = new ImageLoader();
-	    loader.data = new ImageData[] {image.getImageData()};
-	    try {
-			String card = PlatformUtil.getPath(Activator.PLUGIN_ID, "/out/card.png").getPath();
-		    loader.save(card, SWT.IMAGE_PNG);
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
-	    image.dispose();
-
 		child = event.getAge() < event.MAX_TEEN_AGE;
+		saveCard(event);
 		try {
 			Tag html = new Tag("html");
 			Tag head = new Tag("head");
@@ -1484,9 +1470,6 @@ public class HTMLExporter {
 	 */
 	private void generateCard(Event event, Tag cell) {
 		try {
-			//генерация источника данных
-			new XMLExporter(event.getConfiguration());
-			
 			//космограмма
 			Tag tr = new Tag("tr");
 			Tag td = new Tag("td", "class=header");
@@ -1499,33 +1482,10 @@ public class HTMLExporter {
 			tr = new Tag("tr");
 			td = new Tag("td");
 			Tag p = new Tag("p", "class=shot");
-			Tag object = new Tag("object", 
-				"classid=clsid:d27cdb6e-ae6d-11cf-96b8-444553540000 " +
-				"codebase=\"http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0\" " +
-				"width=514 height=514 " +
+			Tag object = new Tag("img",
+				"src=horoscope_files/card.png " +
 				"id=cosmogram " +
 				"align=center");
-			Tag tag = new Tag("param", "name=allowScriptAccess value=sameDomain");
-			object.add(tag);
-			tag = new Tag("param", "name=movie value=horoscope_files/cosmogram.swf");
-			object.add(tag);
-			tag = new Tag("param", "name=quality value=high");
-			object.add(tag);
-			tag = new Tag("param", "name=bgcolor value=#ffffff");
-			object.add(tag);
-			tag = new Tag("embed", 
-				"src=horoscope_files/cosmogram.swf " +
-				"quality=high " +
-				"bgcolor=#ffffff " +
-				"width=514 height=514 " +
-				"name=cosmogram " +
-				"align=center " +
-				"allowScriptAccess=sameDomain " +
-				"type=application/x-shockwave-flash " +
-				"pluginspage=http://www.macromedia.com/go/getflashplayer");
-			object.add(tag);
-			tag = new Tag("allowScriptAccess", "name=bgcolor value=#ffffff");
-			object.add(tag);
 			p.add(object);
 			td.add(p);
 			tr.add(td);
@@ -1872,6 +1832,31 @@ public class HTMLExporter {
 				cell.add(tr);
 			}
 		} catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Сохранение космограммы в PNG-файл
+	 * @param event событие
+	 */
+	private void saveCard(Event event) {
+		try {
+		    Image image = new Image(display, Cosmogram.HEIGHT, Cosmogram.HEIGHT);
+		    GC gc = new GC(image);
+		    gc.setBackground(new Color(display, 254, 250, 248));
+		    gc.fillRectangle(image.getBounds());
+			new Cosmogram(event.getConfiguration(), null, null, gc);
+			ImageLoader loader = new ImageLoader();
+		    loader.data = new ImageData[] {image.getImageData()};
+		    try {
+				String card = PlatformUtil.getPath(Activator.PLUGIN_ID, "/out/horoscope_files/card.png").getPath();
+			    loader.save(card, SWT.IMAGE_PNG);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		    image.dispose();
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
