@@ -35,5 +35,11 @@ Export-Package: kz.zvezdochet.export.bean,
  kz.zvezdochet.export.service,
  kz.zvezdochet.export.util
 Bundle-ClassPath: lib/html-gen.jar,
- lib/xerces-2.6.2.jar,
- .
+ .,
+ lib/itextpdf.jar,
+ lib/jcommon.jar,
+ lib/jfreechart-swt.jar,
+ lib/jfreechart.jar,
+ lib/swtgraphics2d.jar,
+ lib/xerces.jar,
+ lib/xmlworker.jar
