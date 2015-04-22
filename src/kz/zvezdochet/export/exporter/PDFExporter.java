@@ -78,8 +78,10 @@ import org.jfree.data.general.DefaultPieDataset;
 
 import com.itextpdf.awt.PdfGraphics2D;
 import com.itextpdf.text.Anchor;
+import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Chapter;
 import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Font;
 import com.itextpdf.text.FontFactory;
 import com.itextpdf.text.ListItem;
@@ -88,6 +90,7 @@ import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Phrase;
 import com.itextpdf.text.Section;
 import com.itextpdf.text.html.simpleparser.HTMLWorker;
+import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.CMYKColor;
 import com.itextpdf.text.pdf.PdfContentByte;
 import com.itextpdf.text.pdf.PdfPCell;
@@ -104,11 +107,46 @@ import com.itextpdf.text.pdf.PdfWriter;
 public class PDFExporter {
 	private boolean child = false;
 	private Display display;
+	private Font font, fonth1, fonth3;
 
 	public PDFExporter(Display display) {
 		this.display = display;
+		try {
+			BaseFont baseFont = BaseFont.createFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+			BaseFont baseFontBold = BaseFont.createFont("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+			font = new Font(baseFont, 12, Font.NORMAL);
+			fonth1 = new Font(baseFontBold, 20, Font.BOLD, new BaseColor(51, 51, 102));
+			fonth3 = new Font(baseFontBold, 16, Font.BOLD, new BaseColor(102, 102, 153));
+		} catch (DocumentException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
+/*
+Для тех кому интересна кириллица в pdf
+Покопавшись в интернете нашёл решение 
+
+ITextRenderer renderer = new ITextRenderer();
+try {
+    renderer.getFontResolver().addFont("tahoma.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+} catch (DocumentException e) {
+    e.printStackTrace();
+}
+DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+Document doc = builder.parse(new ByteArrayInputStream(html.getBytes("UTF-8")));
+renderer.setDocument(doc, null);
+File file = new File("d:\\test.pdf");
+OutputStream os = new FileOutputStream(file);
+renderer.layout();
+renderer.createPDF(os);
+os.close();
+
+и непосредственно в передаваемом html в теге head прописал стиль body{font-family:Tahoma}
+
+но проблемка заключаеться в том что надо передавать валидный xhtml, но это уже из другой оперы ...
+ */
 	/**
 	 * Сохранение космограммы в PNG-файл
 	 * @param event событие
@@ -164,22 +202,20 @@ public class PDFExporter {
 	        document.add(paragraph1);
 
 	        //абзац
-	        document.add(new Paragraph("Some more text on the first page with different color and font type.", 
-        		FontFactory.getFont(FontFactory.COURIER, 14, Font.BOLD,	new CMYKColor(0, 255, 0, 0))));
+	        document.add(new Paragraph("Some more text on the first page with different color and font type.", font));
 	        String html = "<ul><li><b>очаровательная, ласковая, приторно-нежная</b>. Застенчивая, немного задиристая, с детскими вспышками раздражения. Считает, что рождена для любви, и может добровольно стать смиренной до рабства. Слишком переоценивает своего мужчину, ищет в нём идеального отца;</li><li><b>дама со строптивым характером</b>, пытающаяся водрузить себя на пьедестал, внушить окружающим чувство недосягаемости своей любви.</li></ul>";
-	        HTMLWorker htmlWorker = new HTMLWorker(document);
-	        htmlWorker.parse(new StringReader(html));
+//	        HTMLWorker htmlWorker = new HTMLWorker(document);
+//	        htmlWorker.parse(new StringReader(html));
+	        document.add(new Paragraph(html, font));
 	  
 	        //глава
-	        Paragraph title1 = new Paragraph("Chapter 1", 
-	        	FontFactory.getFont(FontFactory.HELVETICA, 18, Font.BOLDITALIC, new CMYKColor(0, 255, 255,17)));
+	        Paragraph title1 = new Paragraph("Chapter 1", fonth1);
 			Chapter chapter1 = new Chapter(title1, 1);
 			chapter1.setNumberDepth(0);
 			document.add(chapter1);
 			
 			//секция
-			Paragraph title11 = new Paragraph("This is Section 1 in Chapter 1", 
-				FontFactory.getFont(FontFactory.HELVETICA, 16, Font.BOLD, new CMYKColor(0, 255, 255,17)));
+			Paragraph title11 = new Paragraph("This is Section 1 in Chapter 1", fonth3);
 			Section section1 = chapter1.addSection(title11);
 			Paragraph someSectionText = new Paragraph("This text comes as part of section 1 of chapter 1.");
 			section1.add(someSectionText);
@@ -214,42 +250,42 @@ public class PDFExporter {
 			section1.add(image2);
 			      
 			//Добавление якоря в основной документ
-			Paragraph title2 = new Paragraph("Using Anchor", 
-				FontFactory.getFont(FontFactory.HELVETICA, 16, Font.BOLD, new CMYKColor(0, 255, 0, 0)));
+			Paragraph title2 = new Paragraph("Using Anchor", font);
 			section1.add(title2);
 			title2.setSpacingBefore(5000);
 			Anchor anchor2 = new Anchor("Back To Top");
 			anchor2.setReference("#BackToTop");
 			section1.add(anchor2);
+			document.add(section1);
 
 	        // Pie chart
-			PdfTemplate pie = cb.createTemplate(width, height);
-			Graphics2D g2d1 = new PdfGraphics2D(pie, width, height);
-			Rectangle2D r2d1 = new Rectangle2D.Double(0, 0, width, height);
-
-			DefaultPieDataset dataset = new DefaultPieDataset();
-			dataset.setValue(String.format("%s, %s", "name", "surname"), 10);
-			dataset.setValue(String.format("%s, %s", "name2", "surname2"), 20);
-
-			JFreeChart chart = ChartFactory.createPieChart("Movies / directors", dataset, true, true, false);
-			chart.draw(g2d1, r2d1);
-			g2d1.dispose();
-			cb.addTemplate(pie, 0, height);
-
-			// Bar chart
-			PdfTemplate bar = cb.createTemplate(width, height);
-			Graphics2D g2d2 = new PdfGraphics2D(bar, width, height);
-			Rectangle2D r2d2 = new Rectangle2D.Double(0, 0, width, height);
-			
-			DefaultCategoryDataset dataset2 = new DefaultCategoryDataset();
-			dataset2.setValue(5, "movies", String.format("%s, %s", "name", "surname"));
-			dataset2.setValue(15, "movies", String.format("%s, %s", "name2", "surname2"));
-
-	        chart = ChartFactory.createBarChart("Movies / directors", "Director",
-	        	"# Movies", dataset2, PlotOrientation.HORIZONTAL, false, true, false);
-	        chart.draw(g2d2, r2d2);
-	        g2d2.dispose();
-	        cb.addTemplate(bar, 0, 0);
+//			PdfTemplate pie = cb.createTemplate(width, height);
+//			Graphics2D g2d1 = new PdfGraphics2D(pie, width, height);
+//			Rectangle2D r2d1 = new Rectangle2D.Double(0, 0, width, height);
+//
+//			DefaultPieDataset dataset = new DefaultPieDataset();
+//			dataset.setValue(String.format("%s, %s", "name", "surname"), 10);
+//			dataset.setValue(String.format("%s, %s", "name2", "surname2"), 20);
+//
+//			JFreeChart chart = ChartFactory.createPieChart("Movies / directors", dataset, true, true, false);
+//			chart.draw(g2d1, r2d1);
+//			g2d1.dispose();
+//			cb.addTemplate(pie, 0, height);
+//
+//			// Bar chart
+//			PdfTemplate bar = cb.createTemplate(width, height);
+//			Graphics2D g2d2 = new PdfGraphics2D(bar, width, height);
+//			Rectangle2D r2d2 = new Rectangle2D.Double(0, 0, width, height);
+//			
+//			DefaultCategoryDataset dataset2 = new DefaultCategoryDataset();
+//			dataset2.setValue(5, "movies", String.format("%s, %s", "name", "surname"));
+//			dataset2.setValue(15, "movies", String.format("%s, %s", "name2", "surname2"));
+//
+//	        chart = ChartFactory.createBarChart("Movies / directors", "Director",
+//	        	"# Movies", dataset2, PlotOrientation.HORIZONTAL, false, true, false);
+//	        chart.draw(g2d2, r2d2);
+//	        g2d2.dispose();
+//	        cb.addTemplate(bar, 0, 0);
 		        
 	        document.close();			
 			
