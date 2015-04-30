@@ -148,7 +148,8 @@ public class HTMLExporter {
 //			generateHouseChart(statistics, table);
 			
 			//градус рождения
-			generateDegree(event, table);
+			if (!child)
+				generateDegree(event, table);
 			
 			//планеты в знаках
 			generatePlanetsInSigns(event, table);
@@ -1148,7 +1149,8 @@ public class HTMLExporter {
 			contents.put("similar", "Близкие по духу");
 			contents.put("signs", "Выраженные Знаки Зодиака");
 			contents.put("dsigns", "Кредо вашей жизни");
-			contents.put("degree", "Символ рождения");
+			if (!child)
+				contents.put("degree", "Символ рождения");
 
 			b = new Tag("b");
 			b.add("Общая информация");
@@ -1172,7 +1174,7 @@ public class HTMLExporter {
 
 			//описание космограммы
 			contents = new HashMap<String, String>();
-			contents.put("cosmogram", "Анализ космограммы");
+			contents.put("cosmogram", "Космограмма");
 			contents.put("planets", "Планеты");
 			contents.put("aspects", "Аспекты планет");
 			contents.put("configurations", "Конфигурации планет");
