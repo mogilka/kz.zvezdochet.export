@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import kz.zvezdochet.analytics.bean.CrossSign;
+import kz.zvezdochet.analytics.service.CrossSignService;
 import kz.zvezdochet.bean.Cross;
 import kz.zvezdochet.bean.Element;
 import kz.zvezdochet.bean.Halfsphere;
@@ -18,6 +20,7 @@ import kz.zvezdochet.bean.YinYang;
 import kz.zvezdochet.bean.Zone;
 import kz.zvezdochet.core.bean.Model;
 import kz.zvezdochet.core.service.DataAccessException;
+import kz.zvezdochet.core.service.ModelService;
 import kz.zvezdochet.core.util.CoreUtil;
 import kz.zvezdochet.service.CrossService;
 import kz.zvezdochet.service.ElementService;
@@ -59,13 +62,13 @@ public class EventStatistics {
 
 	/**
 	 * Вычисление выраженных знаков Зодиака
-	 * @param main признак того, что нужно учитывать только индивидуальные планеты
+	 * @param main признак того, что нужно учитывать только минорные планеты
 	 * @return карта приоритетных знаков
 	 * @throws DataAccessException 
 	 */
 	public Map<String, Double> getPlanetSigns(boolean main) throws DataAccessException {
 		if (conf.getPlanets() != null) {
-			conf.initPlanetSigns();
+			conf.initPlanetSigns(true);
 			planetSigns = new HashMap<String, Double>();
 			signPlanets = new HashMap<String, Integer>();
 			for (Model model : conf.getPlanets()) {
@@ -148,7 +151,8 @@ public class EventStatistics {
 				double value = 0.0;
 				
 				//выделенность стихий
-				Element element = (Element)new ElementService().find(sign.getElementId());
+				ModelService service = new ElementService();
+				Element element = (Element)service.find(sign.getElementId());
 		    	String division = element.getCode();
 				Object object = planetElements.get(division);
 				if (object != null)
@@ -157,8 +161,9 @@ public class EventStatistics {
 				planetElements.put(division, value);
 
 				//выделенность инь-ян
+				service = new YinYangService();
 				value = 0.0;
-				YinYang yinYang = (YinYang)new YinYangService().find(sign.getYinyangId());
+				YinYang yinYang = (YinYang)service.find(sign.getYinyangId());
 				division = yinYang.getCode();
 				object = planetYinYangs.get(division);
 				if (object != null)
@@ -167,8 +172,9 @@ public class EventStatistics {
 				planetYinYangs.put(division, value);
 
 				//выделенность полусфер
+				service = new HalfsphereService();
 				value = 0.0;
-				Halfsphere halfsphere = (Halfsphere)new HalfsphereService().find(sign.getVerticalHalfSphereId());
+				Halfsphere halfsphere = (Halfsphere)service.find(sign.getVerticalHalfSphereId());
 				division = halfsphere.getCode();
 				object = planetHalfspheres.get(division);
 				if (object != null)
@@ -177,7 +183,7 @@ public class EventStatistics {
 				planetHalfspheres.put(division, value);
 
 				value = 0.0;
-				halfsphere = (Halfsphere)new HalfsphereService().find(sign.getHorizontalalHalfSphereId());
+				halfsphere = (Halfsphere)service.find(sign.getHorizontalalHalfSphereId());
 				division = halfsphere.getCode();
 				object = planetHalfspheres.get(division);
 				if (object != null)
@@ -186,8 +192,9 @@ public class EventStatistics {
 				planetHalfspheres.put(division, value);
 
 				//выделенность квадратов
+				service = new SquareService();
 				value = 0.0;
-				Square square = (Square)new SquareService().find(sign.getSquareId());
+				Square square = (Square)service.find(sign.getSquareId());
 				division = square.getCode();
 				object = planetSquares.get(division);
 				if (object != null)
@@ -196,8 +203,9 @@ public class EventStatistics {
 				planetSquares.put(division, value);
 
 				//выделенность крестов
+				service = new CrossService();
 				value = 0.0;
-				Cross cross = (Cross)new CrossService().find(sign.getCrossId());
+				Cross cross = (Cross)service.find(sign.getCrossId());
 				division = cross.getCode();
 				object = planetCrosses.get(division);
 				if (object != null)
@@ -206,8 +214,9 @@ public class EventStatistics {
 				planetCrosses.put(division, value);
 
 				//выделенность зон
+				service = new ZoneService();
 				value = 0.0;
-				Zone zone = (Zone)new ZoneService().find(sign.getZoneId());
+				Zone zone = (Zone)service.find(sign.getZoneId());
 				division = zone.getCode();
 				object = planetZones.get(division);
 				if (object != null)
@@ -403,58 +412,26 @@ public class EventStatistics {
 	/**
 	 * Вычисление выраженных подкатегорий крестов знаков Зодиака
 	 * @return карта знаков
-	 * @throws DataAccessException 
+	 * @throws DataAccessException
+	 * @todo сохранить в базу значения
 	 */
 	public Map<String, Double> getCrossSigns() throws DataAccessException {
 		Map<String, Double> types = new HashMap<String, Double>();
 		if (planetSigns != null) {
-			double sum = 0.0;
-			String[] signs = {"Aries", "Libra"};
-			for (String sign : signs) {
-				Double value = planetSigns.get(sign);
-				if (value != null) sum += value; 
+			List<Model> crossSigns = new CrossSignService().getList();
+			SignService service = new SignService();
+			for (Model model : crossSigns) {
+				double sum = 0.0;
+				CrossSign crossSign = (CrossSign)model;
+				List<Model> signs = service.findByCross(model.getId());
+				for (Model smodel : signs) {
+					Sign sign = (Sign)smodel;
+					Double value = planetSigns.get(sign.getCode());
+					if (value != null)
+						sum += value; 
+				}
+				types.put(crossSign.getCode(), sum);
 			}
-			types.put("Активность в предложении", sum);
-			
-			sum = 0.0;
-			signs = new String[] {"Cancer", "Capricornus"};
-			for (String sign : signs) {
-				Double value = planetSigns.get(sign);
-				if (value != null) sum += value; 
-			}
-			types.put("Активность в реализации", sum);
-			
-			sum = 0.0;
-			signs = new String[] {"Taurus", "Leo", "Scorpio"};
-			for (String sign : signs) {
-				Double value = planetSigns.get(sign);
-				if (value != null) sum += value; 
-			}
-			types.put("Испытанные методы", sum);
-			
-			sum = 0.0;
-			signs = new String[] {"Ophiuchus", "Aquarius"};
-			for (String sign : signs) {
-				Double value = planetSigns.get(sign);
-				if (value != null) sum += value; 
-			}
-			types.put("Рискованные методы", sum);
-			
-			sum = 0.0;
-			signs = new String[] {"Virgo", "Sagittarius"};
-			for (String sign : signs) {
-				Double value = planetSigns.get(sign);
-				if (value != null) sum += value; 
-			}
-			types.put("Последовательность", sum);
-			
-			sum = 0.0;
-			signs = new String[] {"Pisces", "Gemini"};
-			for (String sign : signs) {
-				Double value = planetSigns.get(sign);
-				if (value != null) sum += value; 
-			}
-			types.put("Непоследовательность", sum);
 		}
 		return types;
 	}
@@ -463,57 +440,25 @@ public class EventStatistics {
 	 * Вычисление выраженных подкатегорий крестов астрологических домов
 	 * @return карта домов
 	 * @throws DataAccessException 
+	 * @todo сохранить в базу значения
 	 */
 	public Map<String, Double> getCrossHouses() throws DataAccessException {
 		Map<String, Double> types = new HashMap<String, Double>();
 		if (planetHouses != null) {
-			double sum = 0.0;
-			String[] houses = {"I", "VII"};
-			for (String house : houses) {
-				Double value = planetHouses.get(house);
-				if (value != null) sum += value; 
+			List<Model> crossSigns = new CrossSignService().getList();
+			HouseService service = new HouseService();
+			for (Model model : crossSigns) {
+				double sum = 0.0;
+				CrossSign crossSign = (CrossSign)model;
+				List<Model> houses = service.findByCross(model.getId());
+				for (Model smodel : houses) {
+					House house = (House)smodel;
+					Double value = planetHouses.get(house.getCode());
+					if (value != null)
+						sum += value; 
+				}
+				types.put(crossSign.getCode(), sum);
 			}
-			types.put("Активность в предложении", sum);
-			
-			sum = 0.0;
-			houses = new String[] {"IV", "X"};
-			for (String house : houses) {
-				Double value = planetHouses.get(house);
-				if (value != null) sum += value; 
-			}
-			types.put("Активность в реализации", sum);
-			
-			sum = 0.0;
-			houses = new String[] {"II", "VIII"};
-			for (String house : houses) {
-				Double value = planetHouses.get(house);
-				if (value != null) sum += value; 
-			}
-			types.put("Испытанные методы", sum);
-			
-			sum = 0.0;
-			houses = new String[] {"V", "XI"};
-			for (String house : houses) {
-				Double value = planetHouses.get(house);
-				if (value != null) sum += value; 
-			}
-			types.put("Рискованные методы", sum);
-			
-			sum = 0.0;
-			houses = new String[] {"VI", "IX"};
-			for (String house : houses) {
-				Double value = planetHouses.get(house);
-				if (value != null) sum += value; 
-			}
-			types.put("Последовательность", sum);
-			
-			sum = 0.0;
-			houses = new String[] {"XII", "III"};
-			for (String house : houses) {
-				Double value = planetHouses.get(house);
-				if (value != null) sum += value; 
-			}
-			types.put("Непоследовательность", sum);
 		}
 		return types;
 	}

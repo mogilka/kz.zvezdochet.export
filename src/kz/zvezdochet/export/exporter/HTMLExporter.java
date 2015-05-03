@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import kz.zvezdochet.analytics.bean.Category;
+import kz.zvezdochet.analytics.bean.CrossSign;
 import kz.zvezdochet.analytics.bean.PlanetAspectText;
 import kz.zvezdochet.analytics.bean.PlanetHouseText;
 import kz.zvezdochet.analytics.bean.PlanetSignText;
@@ -23,6 +24,7 @@ import kz.zvezdochet.analytics.bean.PlanetText;
 import kz.zvezdochet.analytics.service.AnalyticsService;
 import kz.zvezdochet.analytics.service.CardTypeService;
 import kz.zvezdochet.analytics.service.CategoryService;
+import kz.zvezdochet.analytics.service.CrossSignService;
 import kz.zvezdochet.analytics.service.DegreeService;
 import kz.zvezdochet.analytics.service.PlanetAspectService;
 import kz.zvezdochet.analytics.service.PlanetHouseService;
@@ -34,6 +36,7 @@ import kz.zvezdochet.bean.Element;
 import kz.zvezdochet.bean.Event;
 import kz.zvezdochet.bean.Halfsphere;
 import kz.zvezdochet.bean.House;
+import kz.zvezdochet.bean.Place;
 import kz.zvezdochet.bean.Planet;
 import kz.zvezdochet.bean.Sign;
 import kz.zvezdochet.bean.SkyPoint;
@@ -98,12 +101,8 @@ public class HTMLExporter {
 			Tag html = new Tag("html");
 			Tag head = new Tag("head");
 			head.add(new Tag("meta", "http-equiv=Content-Type content=text/html; charset=UTF-8"));
-			head.add(new Tag("script", "type=text/javascript src=mochikit/MochiKit.js"));
-			head.add(new Tag("script", "type=text/javascript src=plotkit/Base.js"));
-			head.add(new Tag("script", "type=text/javascript src=plotkit/Layout.js"));
-			head.add(new Tag("script", "type=text/javascript src=plotkit/Canvas.js"));
-			head.add(new Tag("script", "type=text/javascript src=plotkit/SweetCanvas.js"));
 			head.add(new Tag("link", "href=horoscope_files/horoscope.css rel=stylesheet type=text/css"));
+			head.add(new Tag("link", "href=horoscope_files/chart.css rel=stylesheet type=text/css"));
 			Tag title = new Tag("title");
 			title.add("Индивидуальный гороскоп");
 			head.add(title);
@@ -119,11 +118,15 @@ public class HTMLExporter {
 			//дата события
 			Tag row = new Tag("tr");
 			Tag cell = new Tag("td", "class=mainheader");
+			Place place = event.getPlace();
+			if (null == place)
+				place = new Place().getDefault();
 			cell.add(DateUtil.fulldtf.format(event.getBirth()) +
-				"&ensp;" + (event.getZone() > 0 ? "+" : "") + event.getZone() +
-				"&emsp;" + event.getPlace().getName() +
-				"&ensp;" + event.getPlace().getLatitude() + "&#176;" +
-				", " + event.getPlace().getLongitude() + "&#176;");
+				"&ensp;" + (event.getZone() >= 0 ? "+" : "") + event.getZone() +
+				"&ensp;" + (event.getDst() >= 0 ? "+" : "") + event.getDst() + "DST" +
+				"&emsp;" + place.getName() +
+				"&ensp;" + place.getLatitude() + "&#176;" +
+				", " + place.getLongitude() + "&#176;");
 			row.add(cell);
 			table.add(row);
 			
@@ -176,8 +179,7 @@ public class HTMLExporter {
 			generateHalfSpheres(event, table, statistics);
 			
 			//выделенность квадратов
-			signMap = statistics.getPlanetSigns(false);
-			generateSquares(event, table, statistics);
+			generateSquares(event, table, statistics, signMap);
 			
 			//выделенность крестов
 			generateCrosses(event, table, statistics);
@@ -277,7 +279,7 @@ public class HTMLExporter {
 					if (planet.getHouse().getId().equals(house.getId()))
 						planets.add(planet);
 				}
-				//Создаем информационный блок только если дом не пуст
+				//Создаем информационный блок, только если дом не пуст
 				if (planets.size() > 0) {
 					Tag tr = util.getTaggedHeader(house.getHeaderName(), house.getLinkName());
 					cell.add(tr);
@@ -315,10 +317,8 @@ public class HTMLExporter {
 	private void generatePlanets(Event event, Tag cell) {
 		try {
 			Tag tr = new Tag("tr");
-			Tag td = new Tag("td", "class=header");
-			Tag a = new Tag("a", "name=planets");
-			a.add("Планеты");
-			td.add(a);
+			Tag td = new Tag("td", "class=header id=planets");
+			td.add("Планеты");
 			tr.add(td);
 			cell.add(tr);
 
@@ -398,13 +398,13 @@ public class HTMLExporter {
 	 */
 	private void generateAspectConfigurations(Event event, Tag cell) {
 		try {
-//		WriteLn(report,'<tr><td class=header><a name="configurations">Конфигурации планет</a></td></tr>');
+//		WriteLn(report,'<tr><td class=header id=configurations>Конфигурации планет</td></tr>');
 //		WriteLn(report,'<tr><td>');
-//		WriteLn(report,'<p class="name"><img src="horoscope_files/conf/cross.gif"></p>');
+//		WriteLn(report,'<h5><img src="horoscope_files/conf/cross.gif"></h5>');
 //		WriteLn(report,'</br>');
-//		WriteLn(report,'<p class="name"><img src="horoscope_files/conf/cross.gif"></p>');
+//		WriteLn(report,'<h5><img src="horoscope_files/conf/cross.gif"></h5>');
 //		WriteLn(report,'</br>');
-//		WriteLn(report,'<p class="name"><img src="horoscope_files/conf/cross.gif"></p>');
+//		WriteLn(report,'<h5><img src="horoscope_files/conf/cross.gif"></h5>');
 //		WriteLn(report,'</td></tr>');
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -447,21 +447,15 @@ public class HTMLExporter {
 		    }
 			
 			Tag tr = new Tag("tr");
-			Tag td = new Tag("td", "class=header");
-			Tag a = new Tag("a", "name=aspects");
-			a.add("Соотношение аспектов планет");
-			td.add(a);
+			Tag td = new Tag("td", "class=header id=aspects");
+			td.add("Соотношение аспектов планет");
 			tr.add(td);
 			cell.add(tr);
 	
 			tr = new Tag("tr");
 			td = new Tag("td");
-//			Tag p = new Tag("p", "class=shot");
-//			Tag chart = util.getTaggedChart(17, bars, null);
-			Tag chart = util.getPlotkitChart(bars, null, "pie", "asptypechart", "asptypechartopts", "drawAsptypeChart", 4, 400);
+			Tag chart = util.getCss3Chart(bars, null);
 			td.add(chart);
-//			p.add(chart);
-//			td.add(p);
 			tr.add(td);
 			cell.add(tr);
 		} catch(Exception e) {
@@ -480,9 +474,7 @@ public class HTMLExporter {
 		try {
 			Tag tr = new Tag("tr");
 			Tag td = new Tag("td", "class=header");
-			Tag a = new Tag("a");
-			a.add(header);
-			td.add(a);
+			td.add(header);
 			tr.add(td);
 			cell.add(tr);
 	
@@ -539,10 +531,8 @@ public class HTMLExporter {
 	private void generateZones(Event event, Tag cell, EventStatistics statistics) {
 		try {
 			Tag tr = new Tag("tr");
-			Tag td = new Tag("td", "class=header");
-			Tag a = new Tag("a", "name=zones");
-			a.add("Развитие духа");
-			td.add(a);
+			Tag td = new Tag("td", "class=header id=zones");
+			td.add("Развитие духа в сознании");
 			tr.add(td);
 			cell.add(tr);
 			
@@ -576,30 +566,18 @@ public class HTMLExporter {
 				List<TextGender> genders = zone.getGenderTexts(event.isFemale(), child);
 				for (TextGender gender : genders)
 					printGenderText(gender, event, td);
-				tr.add(td);
-				cell.add(tr);
 
-			    tr = new Tag("tr");
-				td = new Tag("td", "class=header");
-				a = new Tag("a");
-				a.add("Развитие духа в сознании");
-				td.add(a);
-				tr.add(td);
-				cell.add(tr);
-				
-			    tr = new Tag("tr");
-				td = new Tag("td");
-//				Tag chart = util.getTaggedChart(17, bars, "Развитие духа в сознании");
-				Tag chart = util.getPlotkitChart(bars, null, "pie", "zonechart", "zonechartopts", "drawZoneChart", 3, 300);
+				Tag p = new Tag("p");
+				p.add("Диаграмма показывает, какие приоритеты человек ставит в своём развитии.");
+				td.add(p);
+				Tag chart = util.getCss3Chart(bars, null);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
 
 			    tr = new Tag("tr");
 				td = new Tag("td", "class=header");
-				a = new Tag("a");
-				a.add("Развитие духа в действии");
-				td.add(a);
+				td.add("Развитие духа в действии");
 				tr.add(td);
 				cell.add(tr);
 				
@@ -620,8 +598,10 @@ public class HTMLExporter {
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-//				chart = util.getTaggedChart(17, bars, "Развитие духа в действии");
-				chart = util.getPlotkitChart(bars, null, "pie", "zone2chart", "zone2chartopts", "drawZoneChart2", 5, 300);
+				p = new Tag("p");
+				p.add("Диаграмма показывает, как на событийном уровне, в действии меняются приоритеты развития человека по сравнению с предыдущей моделью.");
+				td.add(p);
+				chart = util.getCss3Chart(bars, null);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -640,10 +620,8 @@ public class HTMLExporter {
 	private void generateCrosses(Event event, Tag cell, EventStatistics statistics) {
 		try {
 			Tag tr = new Tag("tr");
-			Tag td = new Tag("td", "class=header");
-			Tag a = new Tag("a", "name=crosses");
-			a.add("Стратегия");
-			td.add(a);
+			Tag td = new Tag("td", "class=header id=crosses");
+			td.add("Стратегия в сознании");
 			tr.add(td);
 			cell.add(tr);
 			
@@ -677,41 +655,38 @@ public class HTMLExporter {
 				List<TextGender> genders = cross.getGenderTexts(event.isFemale(), child);
 				for (TextGender gender : genders)
 					printGenderText(gender, event, td);
+
+				Tag p = new Tag("p");
+				p.add("Диаграмма показывает, какой тип стратегии наиболее присущ человеку в мыслях и принятии решений.");
+				td.add(p);
+				Tag chart = util.getCss3Chart(bars, null);
+				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
 		    }
-		    
-			tr = new Tag("tr");
-			td = new Tag("td", "class=header");
-			a = new Tag("a", "name=crosses");
-			a.add("Стратегия в сознании");
-			td.add(a);
-			tr.add(td);
-			cell.add(tr);
-			
-			tr = new Tag("tr");
-			td = new Tag("td");
-			Tag chart = util.getPlotkitChart(bars, null, "pie", "crosschart", "crosschartopts", "drawCrossChart", 3, 300);
-			td.add(chart);
-			tr.add(td);
-			cell.add(tr);
 
 			//знаки
 			crossMap = statistics.getCrossSigns();
 			bars = new Bar[crossMap.size()];
 			iterator = crossMap.entrySet().iterator();
 			i = -1;
+			CrossSignService service2 = new CrossSignService();
 		    while (iterator.hasNext()) {
 		    	Entry<String, Double> entry = iterator.next();
 		    	Bar bar = new Bar();
-		    	bar.setName(entry.getKey());
+		    	CrossSign element = (CrossSign)service2.find(entry.getKey());
+		    	bar.setName(element.getName());
 		    	bar.setValue(entry.getValue());
+		    	bar.setColor(element.getColor());
 		    	bars[++i] = bar;
 		    }
 			
 			tr = new Tag("tr");
 			td = new Tag("td");
-			chart = util.getPlotkitChart(bars, null, "pie", "crossSignchart", "crossSignchartopts", "drawCrossSignChart", 5, 300);
+			Tag p = new Tag("p");
+			p.add("Диаграмма показывает, в каких качествах выражается стратегия намерений человека.");
+			td.add(p);
+			Tag chart = util.getCss3Chart(bars, null);
 			td.add(chart);
 			tr.add(td);
 			cell.add(tr);
@@ -719,9 +694,7 @@ public class HTMLExporter {
 			//
 			tr = new Tag("tr");
 			td = new Tag("td", "class=header");
-			a = new Tag("a", "name=crosses");
-			a.add("Стратегия в поступках");
-			td.add(a);
+			td.add("Стратегия в поступках");
 			tr.add(td);
 			cell.add(tr);
 			
@@ -741,7 +714,10 @@ public class HTMLExporter {
 			
 			tr = new Tag("tr");
 			td = new Tag("td");
-			chart = util.getPlotkitChart(bars, null, "pie", "cross2chart", "cross2chartopts", "drawCrossChart2", 2, 300);
+			p = new Tag("p");
+			p.add("Диаграмма показывает, как стратегия человека меняется в действии (на событийном уровне, в социуме).");
+			td.add(p);
+			chart = util.getCss3Chart(bars, null);
 			td.add(chart);
 			td.add(new Tag("/br"));
 			tr.add(td);
@@ -755,14 +731,19 @@ public class HTMLExporter {
 		    while (iterator.hasNext()) {
 		    	Entry<String, Double> entry = iterator.next();
 		    	Bar bar = new Bar();
-		    	bar.setName(entry.getKey());
+		    	CrossSign element = (CrossSign)service2.find(entry.getKey());
+		    	bar.setName(element.getName());
 		    	bar.setValue(entry.getValue());
+		    	bar.setColor(element.getColor());
 		    	bars[++i] = bar;
 		    }
 			
 			tr = new Tag("tr");
 			td = new Tag("td");
-			chart = util.getPlotkitChart(bars, null, "pie", "crossHousechart", "crossHousechartopts", "drawCrossHouseChart", 4, 300);
+			p = new Tag("p");
+			p.add("Диаграмма показывает, в каких качествах выражается стратегия действий человека.");
+			td.add(p);
+			chart = util.getCss3Chart(bars, null);
 			td.add(chart);
 			tr.add(td);
 			cell.add(tr);
@@ -778,13 +759,11 @@ public class HTMLExporter {
 	 * @param cell тег-контейнер для вложенных тегов
 	 * @param statistics объект статистики
 	 */
-	private void generateSquares(Event event, Tag cell, EventStatistics statistics) {
+	private void generateSquares(Event event, Tag cell, EventStatistics statistics, Map<String, Double> signMap) {
 		try {
 			Tag tr = new Tag("tr");
-			Tag td = new Tag("td", "class=header");
-			Tag a = new Tag("a", "name=zones");
-			a.add("Зрелость");
-			td.add(a);
+			Tag td = new Tag("td", "class=header id=squares");
+			td.add("Зрелость в сознании");
 			tr.add(td);
 			cell.add(tr);
 			
@@ -818,26 +797,16 @@ public class HTMLExporter {
 				List<TextGender> genders = square.getGenderTexts(event.isFemale(), child);
 				for (TextGender gender : genders)
 					printGenderText(gender, event, td);
-				tr.add(td);
-				cell.add(tr);
-
-			    tr = new Tag("tr");
-				td = new Tag("td", "class=header");
-				a = new Tag("a");
-				a.add("Зрелость в сознании");
-				td.add(a);
-				tr.add(td);
-				cell.add(tr);
 				
-			    tr = new Tag("tr");
-				td = new Tag("td");
-				Tag chart = util.getPlotkitChart(bars, null, "pie", "squarechart", "squarechartopts", "drawSquareChart", 5, 300);
+				Tag p = new Tag("p");
+				p.add("Диаграмма показывает, как в мыслях и намерениях человека выражены качества разных возрастных групп.");
+				td.add(p);
+				Tag chart = util.getCss3Chart(bars, null);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
 
 				//знаки
-				Map<String, Double> signMap = statistics.getPlanetSigns();
 				bars = new Bar[signMap.size()];
 				iterator = signMap.entrySet().iterator();
 				i = -1;
@@ -854,7 +823,10 @@ public class HTMLExporter {
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-				chart = util.getPlotkitChart(bars, null, "pie", "squareSignChart", "squareSignChartOpts", "drawSquareSignChart", 4, 300);
+				p = new Tag("p");
+				p.add("Диаграмма показывает, в каких качествах выражается зрелость мыслей.");
+				td.add(p);
+				chart = util.getCss3Chart(bars, null);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -862,9 +834,7 @@ public class HTMLExporter {
 				//
 			    tr = new Tag("tr");
 				td = new Tag("td", "class=header");
-				a = new Tag("a");
-				a.add("Зрелость в поступках");
-				td.add(a);
+				td.add("Зрелость в поступках");
 				tr.add(td);
 				cell.add(tr);
 				
@@ -884,7 +854,10 @@ public class HTMLExporter {
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-				chart = util.getPlotkitChart(bars, null, "pie", "square2chart", "square2chartopts", "drawSquare2Chart", 5, 300);
+				p = new Tag("p");
+				p.add("Диаграмма показывает, как на событийном уровне, в социуме меняется зрелость намерений человека по сравнению с предыдущей моделью.");
+				td.add(p);
+				chart = util.getCss3Chart(bars, null);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -908,7 +881,10 @@ public class HTMLExporter {
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-				chart = util.getPlotkitChart(bars, null, "pie", "squareHouseChart", "squareHouseChartOpts", "drawSquareHouseChart", 4, 300);
+				p = new Tag("p");
+				p.add("Диаграмма показывает, в каких качествах выражается зрелость поступков.");
+				td.add(p);
+				chart = util.getCss3Chart(bars, null);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -927,20 +903,19 @@ public class HTMLExporter {
 	private void generateHalfSpheres(Event event, Tag cell, EventStatistics statistics) {
 		try {
 			Tag tr = new Tag("tr");
-			Tag td = new Tag("td", "class=header");
-			Tag a = new Tag("a", "name=zones");
-			a.add("Экстраверсия и интроверсия");
-			td.add(a);
+			Tag td = new Tag("td", "class=header id=halfspheres");
+			td.add("Экстраверсия и интроверсия в сознании");
 			tr.add(td);
 			cell.add(tr);
 			
 			Map<String, Double> sphereMap = statistics.getPlanetHalfspheres();
-			Bar[] bars = new Bar[sphereMap.size()];
+			List<Bar> bars = new ArrayList<Bar>();
+			List<Bar> bars2 = new ArrayList<Bar>();
 			Iterator<Map.Entry<String, Double>> iterator = sphereMap.entrySet().iterator();
-			int i = -1;
 			Halfsphere sphere = null;
 			double score = 0.0;
 			HalfsphereService service = new HalfsphereService();
+			String[] extra = new String[] { "North", "West" };
 		    while (iterator.hasNext()) {
 		    	Entry<String, Double> entry = iterator.next();
 		    	Bar bar = new Bar();
@@ -948,7 +923,10 @@ public class HTMLExporter {
 		    	bar.setName(element.getDiaName());
 		    	bar.setValue(entry.getValue());
 		    	bar.setColor(element.getColor());
-		    	bars[++i] = bar;
+		    	if (Arrays.asList(extra).contains(element.getCode()))
+		    		bars.add(bar);
+		    	else
+		    		bars2.add(bar);
 		    	//определяем наиболее выраженный элемент
 		    	if (entry.getValue() > score) {
 		    		score = entry.getValue();
@@ -964,36 +942,27 @@ public class HTMLExporter {
 				List<TextGender> genders = sphere.getGenderTexts(event.isFemale(), child);
 				for (TextGender gender : genders)
 					printGenderText(gender, event, td);
-				tr.add(td);
-				cell.add(tr);
 
-			    tr = new Tag("tr");
-				td = new Tag("td", "class=header");
-				a = new Tag("a");
-				a.add("Экстраверсия и интроверсия в сознании");
-				td.add(a);
-				tr.add(td);
-				cell.add(tr);
-				
-			    tr = new Tag("tr");
-				td = new Tag("td");
-				Tag chart = util.getPlotkitChart(bars, null, "pie", "spherechart", "spherechartopts", "drawSphereChart", 0, 300);
+				Tag p = new Tag("p");
+				p.add("Диаграммы показывают, на что в мыслях нацелен человек.");
+				td.add(p);
+				Tag chart = util.getCss3Chart(bars.toArray(new Bar[2]), "Открытость");
+				td.add(chart);
+				chart = util.getCss3Chart(bars2.toArray(new Bar[2]), "Закрытость");
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
 
 			    tr = new Tag("tr");
 				td = new Tag("td", "class=header");
-				a = new Tag("a");
-				a.add("Экстраверсия и интроверсия в поступках");
-				td.add(a);
+				td.add("Экстраверсия и интроверсия в поступках");
 				tr.add(td);
 				cell.add(tr);
 				
 				sphereMap = statistics.getHouseHalfspheres();
-				bars = new Bar[sphereMap.size()];
+				bars = new ArrayList<Bar>();
+				bars2 = new ArrayList<Bar>();
 				iterator = sphereMap.entrySet().iterator();
-				i = -1;
 				sphere = null;
 			    while (iterator.hasNext()) {
 			    	Entry<String, Double> entry = iterator.next();
@@ -1002,12 +971,20 @@ public class HTMLExporter {
 			    	bar.setName(element.getDiaName());
 			    	bar.setValue(entry.getValue());
 			    	bar.setColor(element.getColor());
-			    	bars[++i] = bar;
+			    	if (Arrays.asList(extra).contains(element.getCode()))
+			    		bars.add(bar);
+			    	else
+			    		bars2.add(bar);
 			    }
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-				chart = util.getPlotkitChart(bars, null, "pie", "sphere2chart", "sphere2chartopts", "drawSphere2Chart", 1, 300);
+				p = new Tag("p");
+				p.add("Диаграммы показывают, как на практике меняется модель поведения человека в социуме.");
+				td.add(p);
+				chart = util.getCss3Chart(bars.toArray(new Bar[2]), "Открытость");
+				td.add(chart);
+				chart = util.getCss3Chart(bars2.toArray(new Bar[2]), "Закрытость");
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -1026,10 +1003,8 @@ public class HTMLExporter {
 	private void generateYinYang(Event event, Tag cell, EventStatistics statistics) {
 		try {
 			Tag tr = new Tag("tr");
-			Tag td = new Tag("td", "class=header");
-			Tag a = new Tag("a", "name=zones");
-			a.add("Гармония мужского и женского начала");
-			td.add(a);
+			Tag td = new Tag("td", "class=header id=yinyang");
+			td.add("Гармония мужского и женского начала в сознании");
 			tr.add(td);
 			cell.add(tr);
 			
@@ -1063,29 +1038,18 @@ public class HTMLExporter {
 				List<TextGender> genders = yinyang.getGenderTexts(event.isFemale(), child);
 				for (TextGender gender : genders)
 					printGenderText(gender, event, td);
-				tr.add(td);
-				cell.add(tr);
 
-			    tr = new Tag("tr");
-				td = new Tag("td", "class=header");
-				a = new Tag("a");
-				a.add("Женское и мужское в сознании человека");
-				td.add(a);
-				tr.add(td);
-				cell.add(tr);
-				
-			    tr = new Tag("tr");
-				td = new Tag("td");
-				Tag chart = util.getPlotkitChart(bars, null, "pie", "yinyangchart", "yinyangchartopts", "drawYinYangChart", 1, 300);
+				Tag p = new Tag("p");
+				p.add("Диаграмма показывает, насколько активны намерения человека, когда он мыслит, принимает решения, находясь наедине с самим собой.");
+				td.add(p);
+				Tag chart = util.getCss3Chart(bars, null);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
 
 			    tr = new Tag("tr");
 				td = new Tag("td", "class=header");
-				a = new Tag("a");
-				a.add("Женское и мужское в поступках человека");
-				td.add(a);
+				td.add("Гармония мужского и женского начала в поступках");
 				tr.add(td);
 				cell.add(tr);
 				
@@ -1106,7 +1070,10 @@ public class HTMLExporter {
 				
 			    tr = new Tag("tr");
 				td = new Tag("td");
-				chart = util.getPlotkitChart(bars, null, "pie", "yinyang2chart", "yinyang2chartopts", "drawYinYang2Chart", 3, 300);
+				p = new Tag("p");
+				p.add("Диаграмма показывает, как на событийном уровне, в социуме меняется активность намерений и проявлений человека по сравнению с предыдущей идеальной моделью.");
+				td.add(p);
+				chart = util.getCss3Chart(bars, null);
 				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
@@ -1230,10 +1197,8 @@ public class HTMLExporter {
 			List<Event> list = new EventService().findEphemeron(date);
 			if (list != null && list.size() > 0) {
 				Tag tr = new Tag("tr");
-				Tag td = new Tag("td", "class=header");
-				Tag a = new Tag("a", "name=celebrity");
-				a.add("Однодневки");
-				td.add(a);
+				Tag td = new Tag("td", "class=header id=celebrity");
+				td.add("Однодневки");
 				tr.add(td);
 				cell.add(tr);
 	
@@ -1267,10 +1232,8 @@ public class HTMLExporter {
 		try {
 			//выраженные знаки
 			Tag tr = new Tag("tr");
-			Tag td = new Tag("td", "class=header");
-			Tag a = new Tag("a", "name=signs");
-			a.add("Выраженные Знаки Зодиака");
-			td.add(a);
+			Tag td = new Tag("td", "class=header id=signs");
+			td.add("Выраженные Знаки Зодиака");
 			tr.add(td);
 			cell.add(tr);
 			
@@ -1296,33 +1259,23 @@ public class HTMLExporter {
 		    	bars2[i] = bar;
 		    }
 			tr = new Tag("tr");
-			td = new Tag("td");
-//			Tag p = new Tag("p", "class=shot");
-//			Tag chart = util.getTaggedChart(17, bars, null);
-			Tag chart = util.getPlotkitChart(bars, null, "pie", "signchart", "signchartopts", "drawSignChart", 4, 300);
+			td = new Tag("td", "class=align-center");
+			Tag chart = util.getCss3Chart(bars, null);
 			td.add(chart);
-//			p.add(chart);
-//			td.add(p);
 			tr.add(td);
 			cell.add(tr);
 	
 			//кредо
 			tr = new Tag("tr");
-			td = new Tag("td", "class=header");
-			a = new Tag("a", "name=dsigns");
-			a.add("Кредо Вашей жизни");
-			td.add(a);
+			td = new Tag("td", "class=header id=credo");
+			td.add("Кредо Вашей жизни");
 			tr.add(td);
 			cell.add(tr);
 	
 			tr = new Tag("tr");
 			td = new Tag("td");
-//			Tag p = new Tag("p", "class=shot");
-//			chart = util.getTaggedChart(17, bars2, null);
-			chart = util.getPlotkitChart(bars2, null, "pie", "sign2chart", "sign2chartopts", "drawSignChart2", 1, 300);
+			chart = util.getTaggedChart(17, bars2, null);
 			td.add(chart);
-//			p.add(chart);
-//			td.add(p);
 			tr.add(td);
 			cell.add(tr);
 		} catch(Exception e) {
@@ -1338,10 +1291,8 @@ public class HTMLExporter {
 	private void generateHouseChart(EventStatistics statistics, Tag cell) {
 		try {
 			Tag tr = new Tag("tr");
-			Tag td = new Tag("td", "class=header");
-			Tag a = new Tag("a", "name=dhouses");
-			a.add("Чем будет заполнена ваша жизнь");
-			td.add(a);
+			Tag td = new Tag("td", "class=header id=dhouses");
+			td.add("Чем будет заполнена ваша жизнь");
 			tr.add(td);
 			cell.add(tr);
 			
@@ -1360,12 +1311,8 @@ public class HTMLExporter {
 		    }
 			tr = new Tag("tr");
 			td = new Tag("td");
-//			Tag p = new Tag("p", "class=shot");
-//			Tag chart = util.getTaggedChart(17, bars, null);
-			Tag chart = util.getPlotkitChart(bars, null, "pie", "housechart", "housechartopts", "drawHouseChart", 3, 400);
+			Tag chart = util.getCss3Chart(bars, null);
 			td.add(chart);
-//			p.add(chart);
-//			td.add(p);
 			tr.add(td);
 			cell.add(tr);
 		} catch(Exception e) {
@@ -1389,16 +1336,14 @@ public class HTMLExporter {
 			    if (model != null) {
 			    	TextGenderDictionary degree = (TextGenderDictionary)model;
 					Tag tr = new Tag("tr");
-					Tag td = new Tag("td", "class=header");
-					Tag a = new Tag("a", "name=degree");
-					a.add("Символ рождения");
-					td.add(a);
+					Tag td = new Tag("td", "class=header id=degree");
+					td.add("Символ рождения");
 					tr.add(td);
 					cell.add(tr);
 					
 					tr = new Tag("tr");
 					td = new Tag("td");
-					Tag p = new Tag("p", "class=name");
+					Tag p = new Tag("h5");
 					Tag tag = util.getBoldTaggedString(degree.getId() + "&#176; " + degree.getCode());
 					p.add(tag);
 					td.add(p);
@@ -1474,10 +1419,8 @@ public class HTMLExporter {
 		try {
 			//космограмма
 			Tag tr = new Tag("tr");
-			Tag td = new Tag("td", "class=header");
-			Tag a = new Tag("a", "name=cosmogram");
-			a.add("Космограмма");
-			td.add(a);
+			Tag td = new Tag("td", "class=header id=cosmogram");
+			td.add("Космограмма");
 			tr.add(td);
 			cell.add(tr);
 	
@@ -1524,16 +1467,14 @@ public class HTMLExporter {
 //			
 //			if (type != null) {
 //				Tag tr = new Tag("tr");
-//				Tag td = new Tag("td", "class=header");
-//				Tag a = new Tag("a", "name=karma");
-//				a.add("Карма прошлой жизни");
-//				td.add(a);
+//				Tag td = new Tag("td", "class=header id=karma");
+//				td.add("Карма прошлой жизни");
 //				tr.add(td);
 //				cell.add(tr);
 //
 //				tr = new Tag("tr");
 //				td = new Tag("td");
-//				Tag p = new Tag("p", "class=name"); 
+//				Tag p = new Tag("h5"); 
 //				p.add(type.getName());
 //				td.add(p);
 //				p = new Tag("p", "class=desc"); 
@@ -1593,10 +1534,8 @@ public class HTMLExporter {
 				    if (model != null) {
 				    	TextGenderDictionary cardType = (TextGenderDictionary)model;
 						Tag tr = new Tag("tr");
-						Tag td = new Tag("td", "class=header");
-						Tag a = new Tag("a", "name=type");
-						a.add("Самораскрытие человека");
-						td.add(a);
+						Tag td = new Tag("td", "class=header id=cardtype");
+						td.add("Самораскрытие человека");
 						tr.add(td);
 						cell.add(tr);
 	
@@ -1627,10 +1566,8 @@ public class HTMLExporter {
 	private void generateElements(Event event, Tag cell, EventStatistics statistics) {
 		try {
 			Tag tr = new Tag("tr");
-			Tag td = new Tag("td", "class=header");
-			Tag a = new Tag("a", "name=elements");
-			a.add("Темперамент");
-			td.add(a);
+			Tag td = new Tag("td", "class=header id=elements");
+			td.add("Темперамент в сознании");
 			tr.add(td);
 			cell.add(tr);
 			
@@ -1682,32 +1619,22 @@ public class HTMLExporter {
 				for (TextGender gender : genders)
 					printGenderText(gender, event, p);
 				td.add(p);
+
+				p = new Tag("p");
+				p.add("Диаграмма показывает, на чём мысленно сконцентрирован человек, какие проявления для него важны, необходимы, естественны.");
+				td.add(p);
+				Tag chart = util.getCss3Chart(bars, element.getTemperament());
+				td.add(chart);
 				tr.add(td);
 				cell.add(tr);
 		    }
-				
-			//Характеристика проявлений личности
+
 		    tr = new Tag("tr");
 			td = new Tag("td", "class=header");
-			a = new Tag("a");
-			a.add("Темперамент в сознании");
-			td.add(a);
+			td.add("Темперамент в поступках");
 			tr.add(td);
 			cell.add(tr);
 			
-			tr = new Tag("tr");
-			td = new Tag("td");
-			a = new Tag("h5");
-			a.add(element.getTemperament());
-			td.add(a);
-			
-//			Tag chart = util.getTaggedChart(17, bars, null);
-			Tag chart = util.getPlotkitChart(bars, null, "pie", "elemchart", "elemchartopts", "drawElemChart", 5, 300);
-			td.add(chart);
-			tr.add(td);
-			cell.add(tr);
-			
-			//Характеристика реализации личности
 			elementMap = statistics.getHouseElements();
 			bars = new Bar[elementMap.size()];
 			iterator = elementMap.entrySet().iterator();
@@ -1723,22 +1650,13 @@ public class HTMLExporter {
 		    	bars[i] = bar;
 		    }
 			
-		    tr = new Tag("tr");
-			td = new Tag("td", "class=header");
-			a = new Tag("a");
-			a.add("Темперамент в поступках");
-			td.add(a);
-			tr.add(td);
-			cell.add(tr);
-			
 			tr = new Tag("tr");
 			td = new Tag("td");
-//			p = new Tag("p", "class=shot");
-//			chart = util.getTaggedChart(17, bars, null);
-			chart = util.getPlotkitChart(bars, null, "pie", "elem2chart", "elem2chartopts", "drawElemChart2", 0, 300);
+			Tag p = new Tag("p");
+			p.add("Диаграмма показывает, как на событийном уровне, в социуме меняются приоритеты человека по сравнению с предыдущей идеальной моделью.");
+			td.add(p);
+			Tag chart = util.getCss3Chart(bars, null);
 			td.add(chart);
-//			p.add(chart);
-//			td.add(p);
 			tr.add(td);
 			cell.add(tr);
 		} catch(Exception e) {
@@ -1812,10 +1730,8 @@ public class HTMLExporter {
 			List<Model> list = new EventService().findSimilar(cevent, 1);
 			if (list != null && list.size() > 0) {
 				Tag tr = new Tag("tr");
-				Tag td = new Tag("td", "class=header");
-				Tag a = new Tag("a", "name=similar");
-				a.add("Близкие по духу");
-				td.add(a);
+				Tag td = new Tag("td", "class=header id=similar");
+				td.add("Близкие по духу");
 				tr.add(td);
 				cell.add(tr);
 	

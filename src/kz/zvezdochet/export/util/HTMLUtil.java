@@ -4,6 +4,8 @@ import html.Tag;
 import kz.zvezdochet.core.util.CoreUtil;
 import kz.zvezdochet.export.bean.Bar;
 
+import org.eclipse.swt.graphics.Color;
+
 /**
  * Набор утилит для html-экспорта
  * @author Nataly Didenko
@@ -95,15 +97,14 @@ public class HTMLUtil {
 	 * Создание строки таблицы, содержащей ячейку с заголовком текста.
 	 * Текст жирный, центрированный, прописными буквами.
 	 * Заливка и цвет текста ячейки определяются CSS-настройками HTML-документа
-	 * @param value текст
+	 * @param name текст
+	 * @param anchor метка
 	 * @return тег строки таблицы
 	 */
-	public Tag getTaggedHeader(String name, String link) {
+	public Tag getTaggedHeader(String name, String anchor) {
 		Tag tr = new Tag("tr");
-		Tag td = new Tag("td", "class=header");
-		Tag a = new Tag("a", "name=" + link);
-		a.add(name);
-		td.add(a);
+		Tag td = new Tag("td", "class=header id=" + anchor);
+		td.add(name);
 		tr.add(td);
 		return tr;
 	}
@@ -145,28 +146,26 @@ public class HTMLUtil {
 	}
 	
 	/**
-	 * Динамическое создание диаграммы
-	 * с помощью стандартной html-таблицы
+	 * Динамическое создание диаграммы с помощью стандартной html-таблицы
 	 * @param colnum число колонок таблицы диаграммы
 	 * @param bars массив категорий диаграммы
 	 * @param chartName наименование диаграммы
 	 * @return тег диаграммы
 	 */
 	public Tag getTaggedChart(int colnum, Bar[] bars, String chartName) {
-		Tag div = new Tag("div", "id=horizbar");
-		
+		int height = 40 * bars.length;
+		Tag div = new Tag("div", "class=chart style=height:" + height + "px");
 		if (chartName != null) {
 			Tag b = new Tag("b");
 			b.add(chartName);
 			div.add(b);
 		}		
-		int height = 40 * bars.length;
-		Tag table = new Tag("table", "width=50% border=0 cellpadding=0 cellspacing=5 align=center height=" + height);
+		Tag table = new Tag("table", "height=" + height);
 		
 		//строка с пустыми ячейками, определяющая количество столбцов
 		Tag tr = new Tag("tr");
 		for (int i = 0; i < colnum; i++) {
-			Tag td = new Tag("td");
+			Tag td = new Tag("th");
 			tr.add(td);
 		}
 		table.add(tr);
@@ -174,11 +173,12 @@ public class HTMLUtil {
 		//строки с данными
 		for (Bar bar : bars) {
 			tr = new Tag("tr");
-			int value = (int)(bar.getValue() * 2);
+			double val = bar.getValue();
+			int value = (int)(val * 2);
 			//элемент диаграммы
-			Tag td = new Tag("td", "colspan=" + value + 
+			Tag td = new Tag("td", "class=filled colspan=" + value + 
 					" bgcolor=#" + CoreUtil.colorToHex(bar.getColor()) + " align=middle");
-			td.add(bar.getValue());
+			td.add(val);
 			tr.add(td);
 
 			//числовое значение
@@ -290,5 +290,61 @@ public class HTMLUtil {
 //			</script>
 //
 //			<div><canvas id="graph" height="300" width="800"></canvas></div>
+	}
+
+	/**
+	 * Динамическое создание круговой диаграммы с помощью CSS3
+	 * @param bars массив категорий диаграммы
+	 * @param chartName наименование диаграммы
+	 * @return тег диаграммы
+	 */
+	public Tag getCss3Chart(Bar[] bars, String chartName) {
+		Tag div = new Tag("div", "class=chart");
+		if (chartName != null) {
+			Tag b = new Tag("h5");
+			b.add(chartName);
+			div.add(b);
+		}
+
+		Tag legend = new Tag("div", "class=legend");
+		double total = 0;
+		for (Bar bar : bars) {
+			double val = bar.getValue();
+			if (0 == val) continue;
+			total += val;
+			Color color = bar.getColor();
+			String attr = "style=border-left-color:rgb(" + color.getRed() + "," + color.getGreen() + "," + color.getBlue() + ")";
+			Tag ldiv = new Tag("div", "class=legend-item " + attr);
+			ldiv.add(bar.getName());
+			Tag span = new Tag("span");
+			span.add(val);
+			ldiv.add(span);
+			legend.add(ldiv);
+		}
+		div.add(legend);
+
+		int i = -1;
+		double deg = 0;
+		for (Bar bar : bars) {
+			String attr = "";
+			if (++i > 0)
+				attr = "style=-moz-transform:rotate(" + deg + "deg);-webkit-transform:rotate(" + deg + "deg);-o-transform:rotate(" + deg + "deg);transform:rotate(" + deg + "deg);";
+			double percent = bar.getValue() * 100 / total;
+			String hclass = (percent >= 50) ? "hold50" : "hold";
+			Tag hdiv = new Tag("div", "class=" + hclass + " " + attr);
+			Color color = bar.getColor();
+			String cattr = "rgb(" + color.getRed() + "," + color.getGreen() + "," + color.getBlue() + ");";
+			double angle = percent * 360 / 100;
+			attr = "style=background-color:" + cattr + "-moz-transform:rotate(" + angle + "deg);-webkit-transform:rotate(" + angle + "deg);-o-transform:rotate(" + angle + "deg);transform:rotate(" + angle + "deg);";
+			Tag pdiv = new Tag("div", "class=pie " + attr);
+			hdiv.add(pdiv);
+
+			if (percent >= 50)
+				hdiv.add(new Tag("div", "class=piefill " + attr));
+
+			div.add(hdiv);
+			deg += angle;
+		}
+		return div;
 	}
 }
