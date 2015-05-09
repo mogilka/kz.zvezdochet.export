@@ -1,6 +1,7 @@
 package kz.zvezdochet.export.util;
 
 import html.Tag;
+import kz.zvezdochet.core.util.CalcUtil;
 import kz.zvezdochet.core.util.CoreUtil;
 import kz.zvezdochet.export.bean.Bar;
 
@@ -345,6 +346,35 @@ public class HTMLUtil {
 			div.add(hdiv);
 			deg += angle;
 		}
+		return div;
+	}
+
+	/**
+	 * Динамическое создание диаграммы с помощью стандартной html-таблицы
+	 * @param total общее количество очков
+	 * @param bars массив категорий диаграммы
+	 * @param chartName наименование диаграммы
+	 * @return тег диаграммы
+	 */
+	public Tag getUlChart(int total, Bar[] bars, String chartName) {
+		int height = 40 * bars.length;
+		Tag div = new Tag("div", "class=chart style=height:" + height + "px");
+		if (chartName != null) {
+			Tag b = new Tag("b");
+			b.add(chartName);
+			div.add(b);
+		}		
+		Tag ul = new Tag("ul", "height=" + height);
+		
+		//строки с данными
+		for (Bar bar : bars) {
+			double val = bar.getValue();
+			double percent = val * 100 / total; 
+			Tag li = new Tag("li", "style=background:#" + CoreUtil.colorToHex(bar.getColor()) + ";background-position-x:" + percent + "%");
+			li.add(CalcUtil.roundTo(percent, 0) + "%   " + bar.getName());
+			ul.add(li);
+		}
+		div.add(ul);
 		return div;
 	}
 }
