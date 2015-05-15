@@ -127,26 +127,6 @@ public class HTMLUtil {
 	}
 
 	/**
-	 * Определение строки, сочетающейся с величиной возраста
-	 * @param age возраст
-	 * @return строка, добавляемая к возрасту
-	 */
-	public String getAgeString(int age) {
-		String s = String.valueOf(age);
-		String lastChar = s.substring(s.length() - 1); 
-		if (age > 10 && age < 20)
-			return s + " лет";
-		else if (lastChar.equals('1'))
-			return s + " год";
-		else if (lastChar.endsWith("2") || lastChar.endsWith("4"))
-			return s + " года";
-		else if (lastChar.endsWith("5") || lastChar.endsWith("9") || lastChar.endsWith("0"))
-			return s + " лет";
-		else 
-			return s + " лет";
-	}
-	
-	/**
 	 * Динамическое создание диаграммы с помощью стандартной html-таблицы
 	 * @param colnum число колонок таблицы диаграммы
 	 * @param bars массив категорий диаграммы
@@ -154,14 +134,13 @@ public class HTMLUtil {
 	 * @return тег диаграммы
 	 */
 	public Tag getTaggedChart(int colnum, Bar[] bars, String chartName) {
-		int height = 40 * bars.length;
-		Tag div = new Tag("div", "class=chart style=height:" + height + "px");
+		Tag div = new Tag("div", "class=chart style=height:" + (30 * bars.length) + "px");
 		if (chartName != null) {
 			Tag b = new Tag("b");
 			b.add(chartName);
 			div.add(b);
 		}		
-		Tag table = new Tag("table", "height=" + height);
+		Tag table = new Tag("table");
 		
 		//строка с пустыми ячейками, определяющая количество столбцов
 		Tag tr = new Tag("tr");
@@ -310,6 +289,7 @@ public class HTMLUtil {
 		Tag legend = new Tag("div", "class=legend");
 		double total = 0;
 		for (Bar bar : bars) {
+			if (null == bar) continue;
 			double val = bar.getValue();
 			if (0 == val) continue;
 			total += val;
@@ -327,6 +307,7 @@ public class HTMLUtil {
 		int i = -1;
 		double deg = 0;
 		for (Bar bar : bars) {
+			if (null == bar) continue;
 			String attr = "";
 			if (++i > 0)
 				attr = "style=-moz-transform:rotate(" + deg + "deg);-webkit-transform:rotate(" + deg + "deg);-o-transform:rotate(" + deg + "deg);transform:rotate(" + deg + "deg);";
