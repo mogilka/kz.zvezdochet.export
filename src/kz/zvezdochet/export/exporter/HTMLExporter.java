@@ -328,7 +328,7 @@ public class HTMLExporter {
 			PlanetTextService service = new PlanetTextService();
 			for (Model model : event.getConfiguration().getPlanets()) {
 				Planet planet = (Planet)model;
-				PlanetText planetText;
+				PlanetText planetText = null;
 				if (planet.isKernel()) {
 					planetText = (PlanetText)service.findByPlanet(planet.getId(), "kernel");
 					if (planetText != null) {
@@ -394,6 +394,12 @@ public class HTMLExporter {
 						td.add(util.getBoldTaggedString(planet.getName() + "-ретроград"));
 						td.add(planetText.getText());
 					}
+				}
+				if (planetText != null) {
+					List<TextGender> genders = planetText.getGenderTexts(event.isFemale(), child);
+					for (TextGender gender : genders)
+						printGenderText(gender, event, td);
+					td.add(new Tag("/br"));
 				}
 			}
 			tr.add(td);
@@ -1198,7 +1204,7 @@ public class HTMLExporter {
 			contents = new HashMap<String, String>();
 			contents.put("cosmogram", "Космограмма");
 			contents.put("cardtype", "Самораскрытие");
-			contents.put("cardkind", "Карма прошлой жизни");
+			contents.put("cardkind", "Кармический потенциал");
 			contents.put("elements", "Темперамент");
 			contents.put("yinyang", "Мужское и женское начало");
 			contents.put("halfspheres", "Экстраверсия");
@@ -1574,12 +1580,16 @@ public class HTMLExporter {
 		try {
 			Tag tr = new Tag("tr");
 			Tag td = new Tag("td", "class=header id=cardkind");
-			td.add("Карма прошлой жизни");
+			td.add("Кармический потенциал");
 			tr.add(td);
 			cell.add(tr);
 
 			tr = new Tag("tr");
 			td = new Tag("td");
+			Tag p = new Tag("p");
+			p.add("Вид космограммы &mdash; это вид сверху на рисунок карты рождения. Здесь важна общая картина, которая не в деталях, а глобально описывает ваше предназначение и кармический опыт прошлого. "
+				+ "Определите, на каком уровне вы находитесь сейчас. Отследите по трём уровням своё развитие.");
+			td.add(p);
 
 //			CardKind type = null;
 //			//упорядочиваем массив планет по возрастанию
