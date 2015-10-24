@@ -134,7 +134,7 @@ public class HTMLUtil {
 	 * @return тег диаграммы
 	 */
 	public Tag getTaggedChart(int colnum, Bar[] bars, String chartName) {
-		Tag div = new Tag("div", "class=chart style=height:" + (30 * bars.length) + "px");
+		Tag div = new Tag("div", "class=chart style=height:" + (40 * bars.length) + "px");
 		if (chartName != null) {
 			Tag b = new Tag("b");
 			b.add(chartName);
