@@ -204,7 +204,7 @@ public class HTMLExporter {
 			Map<String, Double> houseMap = statistics.getPlanetHouses();
 			generatePlanetInHouses(event, table, houseMap);
 			//дома в знаках
-			//generateHouseInSigns(event, table, houseMap);
+			generateHouseInSigns(event, table, houseMap);
 			
 			if (html != null) {
 //				System.out.println(html);
@@ -225,10 +225,12 @@ public class HTMLExporter {
 	 * @param houseMap карта домов
 	 */
 	private void generateHouseInSigns(Event event, Tag cell, Map<String, Double> houseMap) {
-		if (null == event.getConfiguration().getHouses()) return;
+		List<Model> houses = event.getConfiguration().getHouses();
+		if (null == houses) return;
 		try {
-			for (Model hmodel : event.getConfiguration().getHouses()) {
+			for (Model hmodel : houses) {
 				House house = (House)hmodel;
+				if (!house.isExportOnSign()) continue;
 				//Определяем количество планет в доме
 				if (houseMap.get(house.getCode()) != null) continue;
 				//Создаем информационный блок только если дом пуст
@@ -630,7 +632,7 @@ public class HTMLExporter {
 					printGenderText(gender, event, td);
 
 				Tag p = new Tag("p");
-				p.add("Диаграмма показывает, какие приоритеты человек ставит в своём развитии.");
+				p.add("Диаграмма показывает, какие приоритеты вы ставите в своём развитии.");
 				td.add(p);
 				Tag chart = util.getCss3Chart(bars, null);
 				td.add(chart);
@@ -661,7 +663,7 @@ public class HTMLExporter {
 			    tr = new Tag("tr");
 				td = new Tag("td");
 				p = new Tag("p");
-				p.add("Диаграмма показывает, как на событийном уровне, в действии меняются приоритеты развития человека по сравнению с предыдущей моделью.");
+				p.add("Диаграмма показывает, как на событийном уровне, в действии меняются ваши приоритеты развития по сравнению с предыдущей моделью.");
 				td.add(p);
 				chart = util.getCss3Chart(bars, null);
 				td.add(chart);
@@ -719,7 +721,7 @@ public class HTMLExporter {
 					printGenderText(gender, event, td);
 
 				Tag p = new Tag("p");
-				p.add("Диаграмма показывает, какой тип стратегии наиболее присущ человеку в мыслях и принятии решений.");
+				p.add("Диаграмма показывает, какой тип стратегии наиболее присущ вам в мыслях и принятии решений.");
 				td.add(p);
 				Tag chart = util.getCss3Chart(bars, null);
 				td.add(chart);
@@ -746,7 +748,7 @@ public class HTMLExporter {
 			tr = new Tag("tr");
 			td = new Tag("td");
 			Tag p = new Tag("p");
-			p.add("Диаграмма показывает, в каких качествах выражается стратегия намерений человека.");
+			p.add("Диаграмма показывает, в каких качествах выражается стратегия ваших намерений.");
 			td.add(p);
 			Tag chart = util.getCss3Chart(bars, null);
 			td.add(chart);
@@ -777,7 +779,7 @@ public class HTMLExporter {
 			tr = new Tag("tr");
 			td = new Tag("td");
 			p = new Tag("p");
-			p.add("Диаграмма показывает, как стратегия человека меняется в действии (на событийном уровне, в социуме).");
+			p.add("Диаграмма показывает, как ваша стратегия меняется в действии (на событийном уровне, в социуме).");
 			td.add(p);
 			chart = util.getCss3Chart(bars, null);
 			td.add(chart);
@@ -803,7 +805,7 @@ public class HTMLExporter {
 			tr = new Tag("tr");
 			td = new Tag("td");
 			p = new Tag("p");
-			p.add("Диаграмма показывает, в каких качествах выражается стратегия действий человека.");
+			p.add("Диаграмма показывает, в каких качествах выражается стратегия ваших действий.");
 			td.add(p);
 			chart = util.getCss3Chart(bars, null);
 			td.add(chart);
@@ -861,7 +863,7 @@ public class HTMLExporter {
 					printGenderText(gender, event, td);
 				
 				Tag p = new Tag("p");
-				p.add("Диаграмма показывает, как в мыслях и намерениях человека выражены качества разных возрастных групп.");
+				p.add("Диаграмма показывает, как в ваших мыслях и намерениях выражены качества разных возрастных групп.");
 				td.add(p);
 				Tag chart = util.getCss3Chart(bars, null);
 				td.add(chart);
@@ -917,7 +919,7 @@ public class HTMLExporter {
 			    tr = new Tag("tr");
 				td = new Tag("td");
 				p = new Tag("p");
-				p.add("Диаграмма показывает, как на событийном уровне, в социуме меняется зрелость намерений человека по сравнению с предыдущей моделью.");
+				p.add("Диаграмма показывает, как на событийном уровне, в социуме меняется зрелость ваших намерений по сравнению с предыдущей моделью.");
 				td.add(p);
 				chart = util.getCss3Chart(bars, null);
 				td.add(chart);
@@ -1102,7 +1104,7 @@ public class HTMLExporter {
 					printGenderText(gender, event, td);
 
 				Tag p = new Tag("p");
-				p.add("Диаграмма показывает, насколько активны намерения человека, когда он мыслит, принимает решения, находясь наедине с самим собой.");
+				p.add("Диаграмма показывает, насколько активны ваши намерения, когда вы мыслите, принимаете решения, находясь наедине с самим собой.");
 				td.add(p);
 				Tag chart = util.getCss3Chart(bars, null);
 				td.add(chart);
@@ -1133,7 +1135,7 @@ public class HTMLExporter {
 			    tr = new Tag("tr");
 				td = new Tag("td");
 				p = new Tag("p");
-				p.add("Диаграмма показывает, как на событийном уровне, в социуме меняется активность намерений и проявлений человека по сравнению с предыдущей идеальной моделью.");
+				p.add("Диаграмма показывает, как на событийном уровне, в социуме меняется активность ваших намерений и проявлений по сравнению с предыдущей идеальной моделью.");
 				td.add(p);
 				chart = util.getCss3Chart(bars, null);
 				td.add(chart);
@@ -1189,8 +1191,30 @@ public class HTMLExporter {
 				td.add(new Tag("/br"));
 			}
 			td.add(new Tag("/br"));
+
+			b = new Tag("h5");
+			b.add("Диаграммы");
+			td.add(b);
+
+			contents = new HashMap<String, String>();
+			contents.put("cardtype", "Самораскрытие");
+			contents.put("elements", "Темперамент");
+			contents.put("yinyang", "Мужское и женское начало");
+			contents.put("halfspheres", "Экстраверсия");
+			contents.put("squares", "Зрелость");
+			contents.put("crosses", "Стратегия");
+			contents.put("zones", "Развитие духа");
+
+			for (Map.Entry<String, String> entry : contents.entrySet()) {
+				Tag a = new Tag("a", "href=#" + entry.getKey());
+				a.add(entry.getValue());
+				td.add(a);
+				td.add(new Tag("/br"));
+			}
+			td.add(new Tag("/br"));
 			tr.add(td);
 			subtable.add(tr);
+
 			cell.add(subtable);
 
 //---------------------------------------------------------------------------
@@ -1203,14 +1227,7 @@ public class HTMLExporter {
 			//описание космограммы
 			contents = new HashMap<String, String>();
 			contents.put("cosmogram", "Космограмма");
-			contents.put("cardtype", "Самораскрытие");
 			contents.put("cardkind", "Кармический потенциал");
-			contents.put("elements", "Темперамент");
-			contents.put("yinyang", "Мужское и женское начало");
-			contents.put("halfspheres", "Экстраверсия");
-			contents.put("squares", "Зрелость");
-			contents.put("crosses", "Стратегия");
-			contents.put("zones", "Развитие духа");
 			contents.put("planets", "Планеты");
 			contents.put("aspects", "Аспекты планет");
 			contents.put("configurations", "Конфигурации аспектов планет");
@@ -1245,7 +1262,7 @@ public class HTMLExporter {
 						planets.add(planet);
 				}
 				//Создаем информационный блок только если дом не пуст
-				if (planets.size() > 0) {
+				if (planets.size() > 0 || house.isExportOnSign()) {
 					a = new Tag("a", "href=#" + house.getLinkName());
 					a.add(house.getHeaderName());
 					td.add(a);
@@ -1377,7 +1394,7 @@ public class HTMLExporter {
 			Tag p = new Tag("p");
 			p.add("Астрологические дома отражают ваши врождённые возможности, багаж, с которым вы пришли в этот мир. "
 					+ "Пригодится он вам или нет - покажет время. "
-					+ "В любом случае, это отправная точка корабля событий, который поможет вам переплыть море жизни и реализовать свою миссию.");
+					+ "В любом случае, это отправная точка корабля событий, на котором вы поплывёте по морю жизни и реализуете свою миссию.");
 			td.add(p);
 			
 			Map<String, Double> houses = statistics.getPlanetHouses();
@@ -1763,7 +1780,7 @@ public class HTMLExporter {
 					printGenderText(gender, event, td);
 
 				Tag p = new Tag("p");
-				p.add("Диаграмма показывает, на чём мысленно сконцентрирован человек, какие проявления для него важны, необходимы, естественны.");
+				p.add("Диаграмма показывает, на чём мысленно вы сконцентрированы, какие проявления для вас важны, необходимы, естественны.");
 				td.add(p);
 				Tag chart = util.getCss3Chart(bars, element.getTemperament());
 				td.add(chart);
@@ -1795,7 +1812,7 @@ public class HTMLExporter {
 			tr = new Tag("tr");
 			td = new Tag("td");
 			Tag p = new Tag("p");
-			p.add("Диаграмма показывает, как на событийном уровне, в социуме меняются приоритеты человека по сравнению с предыдущей идеальной моделью.");
+			p.add("Диаграмма показывает, как на событийном уровне, в социуме меняются ваши приоритеты по сравнению с предыдущей идеальной моделью.");
 			td.add(p);
 			Tag chart = util.getCss3Chart(bars, null);
 			td.add(chart);
@@ -1877,7 +1894,7 @@ public class HTMLExporter {
 				tr = new Tag("tr");
 				td = new Tag("td");
 				Tag p = new Tag("p");
-				p.add("Известные люди, похожие на Вас по характеру:");
+				p.add("Известные люди, похожие на вас по характеру:");
 				td.add(p);
 
 				p = new Tag("p");
