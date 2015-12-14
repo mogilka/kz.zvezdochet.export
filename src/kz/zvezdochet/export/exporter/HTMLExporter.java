@@ -231,8 +231,8 @@ public class HTMLExporter {
 			for (Model hmodel : houses) {
 				House house = (House)hmodel;
 				if (!house.isExportOnSign()) continue;
-				//Определяем количество планет в доме
-				if (houseMap.get(house.getCode()) != null) continue;
+//				//Определяем количество планет в доме
+//				if (houseMap.get(house.getCode()) != null) continue;
 				//Создаем информационный блок только если дом пуст
 				Sign sign = SkyPoint.getSign(house.getCoord(), event.getBirthYear());
 				Planet planet = new AnalyticsService().getSignPlanet(sign, "HOME");
@@ -270,13 +270,24 @@ public class HTMLExporter {
 	 * @param houseMap карта домов
 	 */
 	private void generatePlanetInHouses(Event event, Tag cell, Map<String, Double> houseMap) {
-		if (null == event.getConfiguration().getHouses()) return;
+		List<Model> houses = event.getConfiguration().getHouses();
+		List<Model> cplanets = event.getConfiguration().getPlanets();
+		if (null == houses) return;
 		try {
-			for (Model hmodel : event.getConfiguration().getHouses()) {
+			for (Model hmodel : houses) {
 				House house = (House)hmodel;
+				/*
+				 * Игнорируем 3 треть 1 дома, т.к. она неверно толкует внешность.
+				 * TODO в будущем сделать отдельную таблицу домов в знаках и
+				 * прописать туда внешности. А в планетах в домах описывать физ. данные
+				 * TODO описание внешности должно содержать всё до мелочей от цвета глаз до роста!
+				 * отдельная тема для исследования
+				 */
+				if (house.getCode().equals("I_3")) continue;
+
 				//Определяем количество планет в доме
 				List<Planet> planets = new ArrayList<Planet>();
-				for (Model pmodel : event.getConfiguration().getPlanets()) {
+				for (Model pmodel : cplanets) {
 					Planet planet = (Planet)pmodel;
 					if (planet.getCode().equals("Kethu")) continue;
 					if (planet.getHouse().getId().equals(house.getId()))
@@ -1008,7 +1019,7 @@ public class HTMLExporter {
 					printGenderText(gender, event, td);
 
 				Tag p = new Tag("p");
-				p.add("Диаграммы показывают, на что в мыслях нацелен человек.");
+				p.add("Диаграммы показывают баланс открытости и закрытости ваших мыслей.");
 				td.add(p);
 				Tag chart = util.getCss3Chart(bars.toArray(new Bar[2]), "Открытость");
 				td.add(chart);
@@ -1044,7 +1055,7 @@ public class HTMLExporter {
 			    tr = new Tag("tr");
 				td = new Tag("td");
 				p = new Tag("p");
-				p.add("Диаграммы показывают, как на практике меняется модель поведения человека в социуме.");
+				p.add("Диаграммы показывают, как на практике меняется ваш баланс поведения в социуме.");
 				td.add(p);
 				chart = util.getCss3Chart(bars.toArray(new Bar[2]), "Открытость");
 				td.add(chart);
@@ -1698,7 +1709,7 @@ public class HTMLExporter {
 				    	TextGenderDictionary cardType = (TextGenderDictionary)model;
 						Tag tr = new Tag("tr");
 						Tag td = new Tag("td", "class=header id=cardtype");
-						td.add("Самораскрытие человека");
+						td.add("Самораскрытие");
 						tr.add(td);
 						cell.add(tr);
 	
