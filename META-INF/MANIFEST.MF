@@ -29,7 +29,9 @@ Import-Package: kz.zvezdochet.analytics.bean,
  org.eclipse.e4.ui.model.application.ui,
  org.eclipse.e4.ui.model.application.ui.basic
 Bundle-ActivationPolicy: lazy
-Export-Package: kz.zvezdochet.export.bean,
+Export-Package: html,
+ kz.zvezdochet.export,
+ kz.zvezdochet.export.bean,
  kz.zvezdochet.export.exporter,
  kz.zvezdochet.export.handler,
  kz.zvezdochet.export.service,

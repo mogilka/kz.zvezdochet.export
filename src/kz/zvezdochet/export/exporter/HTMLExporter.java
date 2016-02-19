@@ -238,8 +238,7 @@ public class HTMLExporter {
 				Planet planet = new AnalyticsService().getSignPlanet(sign, "HOME");
 				if (null == planet) continue;
 				
-				PlanetHouseText dict = (PlanetHouseText)
-							new PlanetHouseService().find(planet, house, null);
+				PlanetHouseText dict = (PlanetHouseText)new PlanetHouseService().find(planet, house, null);
 				if (dict != null) {
 					Tag tr = util.getTaggedHeader(house.getHeaderName(), house.getLinkName());
 					cell.add(tr);
