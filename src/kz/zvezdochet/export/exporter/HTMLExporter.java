@@ -555,31 +555,33 @@ public class HTMLExporter {
 	
 			tr = new Tag("tr");
 			td = new Tag("td");
-			for (SkyPointAspect aspect : event.getConfiguration().getAspects()) {
-				if (!((Planet)aspect.getSkyPoint1()).isMain()) continue;
+			PlanetAspectService service = new PlanetAspectService();
+			List<SkyPointAspect> aspects = event.getConfiguration().getAspects();
+			for (SkyPointAspect aspect : aspects) {
+				Planet planet1 = (Planet)aspect.getSkyPoint1();
+				Planet planet2 = (Planet)aspect.getSkyPoint2();
+				if (!planet1.isMain())
+					continue;
+				if (planet1.getNumber() > planet2.getNumber())
+					continue;
 				AspectType type = aspect.getAspect().getType();
 				if (type.getCode().equals(aspectType) ||
 						(aspectType.equals("POSITIVE") &&
-								!((Planet)aspect.getSkyPoint2()).getCode().equals("Lilith") &&
-								!((Planet)aspect.getSkyPoint2()).getCode().equals("Kethu") &&
+								!planet2.getCode().equals("Lilith") ||
+								!planet2.getCode().equals("Kethu") &&
 								type.getCode().equals("NEUTRAL")) ||
 						(aspectType.equals("NEGATIVE") &&
-								(((Planet)aspect.getSkyPoint2()).getCode().equals("Lilith") ||
-								((Planet)aspect.getSkyPoint2()).getCode().equals("Kethu")) &&
+								(planet2.getCode().equals("Lilith") ||
+								planet2.getCode().equals("Kethu")) &&
 								type.getCode().equals("NEUTRAL"))	
 				) {
-					PlanetAspectText dict = (PlanetAspectText)
-						new PlanetAspectService().find(
-								(Planet)aspect.getSkyPoint1(), 
-								(Planet)aspect.getSkyPoint2(), 
-								type);
+					PlanetAspectText dict = (PlanetAspectText)service.find(planet1, planet2, type);
 					if (dict != null) {
 						Tag tag = util.getBoldTaggedString(
 							dict.getPlanet1().getName() + " " + 
 							type.getSymbol() + " " + 
 							dict.getPlanet2().getName());
 						td.add(tag);
-
 						td.add(dict.getText());
 
 						List<TextGender> genders = dict.getGenderTexts(event.isFemale(), child);
