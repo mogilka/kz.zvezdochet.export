@@ -191,9 +191,9 @@ public class HTMLExporter {
 			//аспекты
 			generateAspectTypes(event, table);
 			//позитивные аспекты
-			generateAspects(event, table, "Позитивные аспекты планет", "POSITIVE");
+			generateAspects(event, table, "Позитивные сочетания", "POSITIVE");
 			//негативные аспекты
-			generateAspects(event, table, "Негативные аспекты планет", "NEGATIVE");
+			generateAspects(event, table, "Негативные сочетания", "NEGATIVE");
 			//конфигурации аспектов
 			generateAspectConfigurations(event, table);
 
@@ -231,9 +231,9 @@ public class HTMLExporter {
 			for (Model hmodel : houses) {
 				House house = (House)hmodel;
 				if (!house.isExportOnSign()) continue;
-//				//Определяем количество планет в доме
-//				if (houseMap.get(house.getCode()) != null) continue;
+				//Определяем количество планет в доме
 				//Создаем информационный блок только если дом пуст
+				if (houseMap.get(house.getCode()) != null) continue;
 				Sign sign = SkyPoint.getSign(house.getCoord(), event.getBirthYear());
 				Planet planet = new AnalyticsService().getSignPlanet(sign, "HOME");
 				if (null == planet) continue;
@@ -331,7 +331,7 @@ public class HTMLExporter {
 		try {
 			Tag tr = new Tag("tr");
 			Tag td = new Tag("td", "class=header id=planets");
-			td.add("Планеты");
+			td.add("Сильные и слабые стороны");
 			tr.add(td);
 			cell.add(tr);
 
@@ -372,6 +372,12 @@ public class HTMLExporter {
 					if (planetText != null) {
 						td.add(util.getBoldTaggedString(planet.getName() + " в шахте"));
 						td.add(planetText.getText());
+
+//						<p>В этом вам поможет сфера жизни, определяемая диспозитором:
+//							<ul>
+//							<li><b>Луна</b> - материнский инстинкт, способность заботиться и воспитывать, любовь к дому и семейным ценностям, склонность к домашним занятиям</li>
+//							</ul>
+//							</p>
 					}
 				}
 				if (planet.isDamaged()) {
@@ -430,7 +436,7 @@ public class HTMLExporter {
 		try {
 			Tag tr = new Tag("tr");
 			Tag td = new Tag("td", "class=header id=configurations");
-			td.add("Конфигурации аспектов планет");
+			td.add("Комплексный анализ личности");
 			tr.add(td);
 			cell.add(tr);
 
@@ -557,23 +563,34 @@ public class HTMLExporter {
 			td = new Tag("td");
 			PlanetAspectService service = new PlanetAspectService();
 			List<SkyPointAspect> aspects = event.getConfiguration().getAspects();
+			AspectType damaged = (AspectType)new AspectTypeService().find("NEGATIVE");
+
 			for (SkyPointAspect aspect : aspects) {
 				Planet planet1 = (Planet)aspect.getSkyPoint1();
-				Planet planet2 = (Planet)aspect.getSkyPoint2();
 				if (!planet1.isMain())
 					continue;
+				long asplanetid = aspect.getAspect().getPlanetid();
+				if (asplanetid > 0 && asplanetid != planet1.getId())
+					continue;
+				Planet planet2 = (Planet)aspect.getSkyPoint2();
 				if (planet1.getNumber() > planet2.getNumber())
 					continue;
+
 				AspectType type = aspect.getAspect().getType();
+				if (type.getCode().equals("NEUTRAL")
+						&& (planet1.isDamaged() || planet1.isLilithed())
+						&& (planet2.isDamaged() || planet2.isLilithed()))
+					type = damaged;
+
 				if (type.getCode().equals(aspectType) ||
 						(aspectType.equals("POSITIVE") &&
-								!planet2.getCode().equals("Lilith") ||
+								!planet2.getCode().equals("Lilith") &&
 								!planet2.getCode().equals("Kethu") &&
 								type.getCode().equals("NEUTRAL")) ||
 						(aspectType.equals("NEGATIVE") &&
-								(planet2.getCode().equals("Lilith") ||
+								((planet2.getCode().equals("Lilith") ||
 								planet2.getCode().equals("Kethu")) &&
-								type.getCode().equals("NEUTRAL"))	
+								type.getCode().equals("NEUTRAL")))
 				) {
 					PlanetAspectText dict = (PlanetAspectText)service.find(planet1, planet2, type);
 					if (dict != null) {
@@ -1238,14 +1255,14 @@ public class HTMLExporter {
 
 			//описание космограммы
 			contents = new HashMap<String, String>();
-			contents.put("cosmogram", "Космограмма");
+			contents.put("cosmogram", "Карта рождения");
 			contents.put("cardkind", "Кармический потенциал");
-			contents.put("planets", "Планеты");
-			contents.put("aspects", "Аспекты планет");
-			contents.put("configurations", "Конфигурации аспектов планет");
+			contents.put("planets", "Сильные и слабые стороны");
+			contents.put("aspects", "Сильные и слабые сочетания");
+			contents.put("configurations", "Комплексный анализ личности");
 			
 			b = new Tag("h5");
-			b.add("Космограмма");
+			b.add("Карта рождения");
 			td.add(b);
 			for (Map.Entry<String, String> entry : contents.entrySet()) {
 				Tag a = new Tag("a", "href=#" + entry.getKey());
@@ -1259,7 +1276,7 @@ public class HTMLExporter {
 			b.add("Реализация личности");
 			td.add(b);
 			Tag a = new Tag("a", "href=#houses");
-			a.add("Астрологические дома");
+			a.add("Сферы жизни");
 			td.add(a);
 			td.add(new Tag("/br"));
 
@@ -1338,7 +1355,7 @@ public class HTMLExporter {
 			//выраженные знаки
 			Tag tr = new Tag("tr");
 			Tag td = new Tag("td", "class=header id=signs");
-			td.add("Выраженные Знаки Зодиака");
+			td.add("Выраженные знаки Зодиака");
 			tr.add(td);
 			cell.add(tr);
 			
@@ -1373,7 +1390,7 @@ public class HTMLExporter {
 			//кредо
 			tr = new Tag("tr");
 			td = new Tag("td", "class=header id=credo");
-			td.add("Кредо Вашей жизни");
+			td.add("Кредо вашей жизни");
 			tr.add(td);
 			cell.add(tr);
 	
@@ -1397,14 +1414,14 @@ public class HTMLExporter {
 		try {
 			Tag tr = new Tag("tr");
 			Tag td = new Tag("td", "class=header id=houses");
-			td.add("Астрологические дома");
+			td.add("Сферы жизни");
 			tr.add(td);
 			cell.add(tr);
 	
 			tr = new Tag("tr");
 			td = new Tag("td");
 			Tag p = new Tag("p");
-			p.add("Астрологические дома отражают ваши врождённые возможности, багаж, с которым вы пришли в этот мир. "
+			p.add("Сферы жизни отражают ваши врождённые возможности, багаж, с которым вы пришли в этот мир. "
 					+ "Пригодится он вам или нет - покажет время. "
 					+ "В любом случае, это отправная точка корабля событий, на котором вы поплывёте по морю жизни и реализуете свою миссию.");
 			td.add(p);
@@ -1524,7 +1541,7 @@ public class HTMLExporter {
 			//космограмма
 			Tag tr = new Tag("tr");
 			Tag td = new Tag("td", "class=header id=cosmogram");
-			td.add("Космограмма");
+			td.add("Карта рождения");
 			tr.add(td);
 			cell.add(tr);
 	
@@ -1630,6 +1647,10 @@ public class HTMLExporter {
 			p.add("Вид космограммы &mdash; это вид сверху на рисунок карты рождения. Здесь важна общая картина, которая не в деталях, а глобально описывает ваше предназначение и кармический опыт прошлого. "
 				+ "Определите, на каком уровне вы находитесь сейчас. Отследите по трём уровням своё развитие.");
 			td.add(p);
+			p = new Tag("p", "class=name");
+			td.add(p);
+			p = new Tag("p", "class=desc");
+			td.add(p);
 
 //			CardKind type = null;
 //			//упорядочиваем массив планет по возрастанию
@@ -1667,7 +1688,7 @@ public class HTMLExporter {
 	}
 
 	/**
-	 * Генерация типа космограммы
+	 * Генерация типа космограммы на основе положения Солнца и Луны
 	 * @param event событие
 	 * @param cell тег-контейнер для вложенных тегов
 	 * @param signMap карта знаков
@@ -1881,7 +1902,7 @@ public class HTMLExporter {
 		script.add("var year = new Date().getYear(); if (year < 1000) year += 1900; document.write(year);");
 		cell.add(script);
 		cell.add("Астрологический сервис" + "&nbsp;");
-		Tag a = new Tag("a", "href=http://zvezdochet.guru/ target=_blank");
+		Tag a = new Tag("a", "href=https://zvezdochet.guru target=_blank");
 		a.add("«Звездочёт»");
 		cell.add(a);
 		cell.add(" &mdash; Взгляни на себя в прошлом, настоящем и будущем");
