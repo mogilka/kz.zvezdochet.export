@@ -5,12 +5,20 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.Calendar;
 
 import kz.zvezdochet.bean.Event;
 import kz.zvezdochet.core.util.PlatformUtil;
 import kz.zvezdochet.export.Activator;
+import kz.zvezdochet.util.Cosmogram;
 
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.widgets.Display;
 
 import com.itextpdf.text.Anchor;
@@ -19,17 +27,21 @@ import com.itextpdf.text.Chapter;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Font;
+import com.itextpdf.text.Font.FontFamily;
 import com.itextpdf.text.ListItem;
 import com.itextpdf.text.PageSize;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Phrase;
 import com.itextpdf.text.Section;
+import com.itextpdf.text.html.simpleparser.HTMLWorker;
 import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfContentByte;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.itextpdf.tool.xml.XMLWorkerHelper;
+
+import html.Tag;
 
 /**
  * Генератор PDF-файла натальной карты
@@ -39,19 +51,20 @@ import com.itextpdf.tool.xml.XMLWorkerHelper;
 public class PDFExporter {
 	private boolean child = false;
 	private Display display;
+	private Document document;
+	private PdfWriter writer;
 	private Font font, fonth1, fonth3;
 
 	public PDFExporter(Display display) {
 		this.display = display;
 		try {
-			BaseFont baseFont = BaseFont.createFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
-			BaseFont baseFontBold = BaseFont.createFont("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
-			font = new Font(baseFont, 12, Font.NORMAL);
-			fonth1 = new Font(baseFontBold, 20, Font.BOLD, new BaseColor(51, 51, 102));
-			fonth3 = new Font(baseFontBold, 16, Font.BOLD, new BaseColor(102, 102, 153));
-		} catch (DocumentException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
+//			BaseFont baseFont = BaseFont.createFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+//			BaseFont baseFontBold = BaseFont.createFont("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+			FontFamily fontFamily = Font.FontFamily.HELVETICA;
+			font = new Font(fontFamily, 12, Font.NORMAL);
+			fonth1 = new Font(fontFamily, 20, Font.BOLD, new BaseColor(51, 51, 102));
+			fonth3 = new Font(fontFamily, 16, Font.BOLD, new BaseColor(102, 102, 153));
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -64,33 +77,45 @@ public class PDFExporter {
 	 * http://viralpatel.net/blogs/generate-pie-chart-bar-graph-in-pdf-using-itext-jfreechart/
 	 * http://viralpatel.net/blogs/generate-pdf-file-in-java-using-itext-jar/
 	 * http://itextpdf.com/examples/iia.php?id=131
+	 * http://stackoverflow.com/questions/17825782/how-to-convert-html-to-pdf-using-itext
 	 */
 	public void generate(Event event) {
 		child = event.getAge() < event.MAX_TEEN_AGE;
+		saveCard(event);
 		try {
-			Document document = new Document();
-			String pdf = PlatformUtil.getPath(Activator.PLUGIN_ID, "/out/horoscope.pdf").getPath();
-	        PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream(pdf));
+			document = new Document();
+			String filename = PlatformUtil.getPath(Activator.PLUGIN_ID, "/out/horoscope.pdf").getPath();
+	        writer = PdfWriter.getInstance(document, new FileOutputStream(filename));
 	        document.open();
+
+	        //metadata
+	        document.addTitle("Индивидуальный гороскоп");
+	        document.addSubject("Астрологический сервис Звездочёт");
+	        document.addKeywords("гороскоп, звездочёт, сидерическая астрология");
+	        document.addAuthor("Наталья Диденко");
+	        document.addCreator("Наталья Диденко");
+	        document.addCreationDate();
 
 	        PdfContentByte cb = writer.getDirectContent();
 	        float width = PageSize.A4.getWidth();
 	        float height = PageSize.A4.getHeight();
+
+	        printCopyright();
 	        
 	        //якорь
-	        Anchor anchorTarget = new Anchor("First page of the document.");
-	        anchorTarget.setName("BackToTop");
-	        Paragraph paragraph1 = new Paragraph();
-	        paragraph1.setSpacingBefore(50);
-	        paragraph1.add(anchorTarget);
-	        document.add(paragraph1);
+	        Anchor anchor = new Anchor("First page of the document.");
+	        anchor.setName("BackToTop");
+	        Paragraph paragraph = new Paragraph();
+	        paragraph.setSpacingBefore(50);
+	        paragraph.add(anchor);
+	        document.add(paragraph);
 
 	        //абзац
 	        document.add(new Paragraph("Some more text on the first page with different color and font type.", font));
 	        String html = "<ul><li><b>очаровательная, ласковая, приторно-нежная</b>. Застенчивая, немного задиристая, с детскими вспышками раздражения. Считает, что рождена для любви, и может добровольно стать смиренной до рабства. Слишком переоценивает своего мужчину, ищет в нём идеального отца;</li><li><b>дама со строптивым характером</b>, пытающаяся водрузить себя на пьедестал, внушить окружающим чувство недосягаемости своей любви.</li></ul>";
 	        InputStream is = new ByteArrayInputStream(html.getBytes());
 	        XMLWorkerHelper.getInstance().parseXHtml(writer, document, is, Charset.forName("UTF-8"));
-	        //document.add(new Paragraph(html, font));
+//	        document.add(new Paragraph(html, font));
 	  
 	        //глава
 	        Paragraph title1 = new Paragraph("Chapter 1", fonth1);
@@ -128,7 +153,7 @@ public class PDFExporter {
 			section1.add(l);
 			      
 			//изображение
-			String card = PlatformUtil.getPath(Activator.PLUGIN_ID, "/out/card.png").getPath();
+			String card = PlatformUtil.getPath(Activator.PLUGIN_ID, "/out/horoscope_files/card.png").getPath();
 			com.itextpdf.text.Image image2 = com.itextpdf.text.Image.getInstance(card);
 			image2.scaleAbsolute(120f, 120f);
 			section1.add(image2);
@@ -280,6 +305,49 @@ public class PDFExporter {
 		} catch(Exception e) {
 			MessageDialog.openError(Display.getDefault().getActiveShell(), "Ошибка", e.getMessage());
 			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Сохранение космограммы в PNG-файл
+	 * @param event событие
+	 */
+	private void saveCard(Event event) {
+		try {
+		    Image image = new Image(display, Cosmogram.HEIGHT, Cosmogram.HEIGHT);
+		    GC gc = new GC(image);
+		    gc.setBackground(new Color(display, 254, 250, 248));
+		    gc.fillRectangle(image.getBounds());
+			new Cosmogram(event.getConfiguration(), null, null, gc);
+			ImageLoader loader = new ImageLoader();
+		    loader.data = new ImageData[] {image.getImageData()};
+		    try {
+				String card = PlatformUtil.getPath(Activator.PLUGIN_ID, "/out/horoscope_files/card.png").getPath();
+			    loader.save(card, SWT.IMAGE_PNG);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		    image.dispose();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Отображение информации о копирайте
+	 */
+	private void printCopyright() {
+		try {
+		    String html = "&copy; 1998-" + Calendar.getInstance().get(Calendar.YEAR) +
+		    		" Астрологический сервис" + "<a href='https://zvezdochet.guru' target='_blank'>«Звездочёт»</a>" +
+		    		" &mdash; Взгляни на себя в прошлом, настоящем и будущем";
+
+		    InputStream is = new ByteArrayInputStream(html.getBytes());
+		    XMLWorkerHelper.getInstance().parseXHtml(writer, document, is, Charset.forName("UTF-8"));
+//		    document.add(new Paragraph(html, font));
+//		    htmlWorker.parse(new StringReader(k));
+		} catch (Exception e) {
+		    e.printStackTrace();
 		}
 	}
 }
