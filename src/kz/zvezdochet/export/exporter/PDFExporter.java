@@ -7,11 +7,6 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Calendar;
 
-import kz.zvezdochet.bean.Event;
-import kz.zvezdochet.core.util.PlatformUtil;
-import kz.zvezdochet.export.Activator;
-import kz.zvezdochet.util.Cosmogram;
-
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
@@ -24,104 +19,133 @@ import org.eclipse.swt.widgets.Display;
 import com.itextpdf.text.Anchor;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Chapter;
+import com.itextpdf.text.Chunk;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Element;
 import com.itextpdf.text.Font;
 import com.itextpdf.text.Font.FontFamily;
 import com.itextpdf.text.ListItem;
 import com.itextpdf.text.PageSize;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Phrase;
+import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.Section;
-import com.itextpdf.text.html.simpleparser.HTMLWorker;
 import com.itextpdf.text.pdf.BaseFont;
+import com.itextpdf.text.pdf.ColumnText;
 import com.itextpdf.text.pdf.PdfContentByte;
+import com.itextpdf.text.pdf.PdfGState;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfPageEvent;
+import com.itextpdf.text.pdf.PdfReader;
+import com.itextpdf.text.pdf.PdfStamper;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.itextpdf.tool.xml.XMLWorkerHelper;
 
-import html.Tag;
+import kz.zvezdochet.bean.Event;
+import kz.zvezdochet.bean.Place;
+import kz.zvezdochet.core.util.DateUtil;
+import kz.zvezdochet.core.util.PlatformUtil;
+import kz.zvezdochet.export.Activator;
+import kz.zvezdochet.util.Cosmogram;
 
 /**
  * Генератор PDF-файла натальной карты
  * @author Nataly Didenko
- *
+ * http://stackoverflow.com/questions/12997739/jfreechart-itext-put-multiple-charts-in-one-pdf
+ * http://viralpatel.net/blogs/generate-pie-chart-bar-graph-in-pdf-using-itext-jfreechart/
+ * http://viralpatel.net/blogs/generate-pdf-file-in-java-using-itext-jar/
+ * http://itextpdf.com/examples/iia.php?id=131
+ * http://stackoverflow.com/questions/17825782/how-to-convert-html-to-pdf-using-itext
+ * https://github.com/flyingsaucerproject/flyingsaucer/blob/master/flying-saucer-examples/src/main/java/PDFRenderToMultiplePages.java
+ * http://itextsupport.com/apidocs/itext5/latest/com/itextpdf/text/package-summary.html
+ * http://www.vogella.com/tutorials/JavaPDF/article.html
+ * http://developers.itextpdf.com/examples/itext5-building-blocks/chunk-examples
+ * http://developers.itextpdf.com/examples/graphics/pattern-colors#1575-gradienttoptobottom.java
+ * http://developers.itextpdf.com/question/how-change-line-spacing-text
+ * https://sourceforge.net/p/itext/sandbox/ci/c05c80778a0ea01b901b3027d433b77e68f595af/tree/src/sandbox/objects/FitTextInRectangle.java#l45
+ * http://developers.itextpdf.com/frequently-asked-developer-questions?id=223
  */
 public class PDFExporter {
 	private boolean child = false;
 	private Display display;
-	private Document document;
-	private PdfWriter writer;
-	private Font font, fonth1, fonth3;
+	private BaseFont baseFont;
+	private Font font, fonth1, fonth3, fonta;
 
 	public PDFExporter(Display display) {
 		this.display = display;
 		try {
-//			BaseFont baseFont = BaseFont.createFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+			baseFont = BaseFont.createFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
 //			BaseFont baseFontBold = BaseFont.createFont("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
-			FontFamily fontFamily = Font.FontFamily.HELVETICA;
-			font = new Font(fontFamily, 12, Font.NORMAL);
-			fonth1 = new Font(fontFamily, 20, Font.BOLD, new BaseColor(51, 51, 102));
-			fonth3 = new Font(fontFamily, 16, Font.BOLD, new BaseColor(102, 102, 153));
+//			FontFamily fontFamily = Font.FontFamily.HELVETICA;
+			font = new Font(baseFont, 12, Font.NORMAL);
+			fonth1 = new Font(baseFont, 20, Font.BOLD, new BaseColor(51, 51, 102));
+			fonth3 = new Font(baseFont, 16, Font.BOLD, new BaseColor(102, 102, 153));
+			fonta = new Font(baseFont, 12, Font.UNDERLINE, new BaseColor(102, 102, 153));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-
 	/**
 	 * Генерация индивидуального гороскопа
 	 * @param event событие
-	 * http://stackoverflow.com/questions/12997739/jfreechart-itext-put-multiple-charts-in-one-pdf
-	 * http://viralpatel.net/blogs/generate-pie-chart-bar-graph-in-pdf-using-itext-jfreechart/
-	 * http://viralpatel.net/blogs/generate-pdf-file-in-java-using-itext-jar/
-	 * http://itextpdf.com/examples/iia.php?id=131
-	 * http://stackoverflow.com/questions/17825782/how-to-convert-html-to-pdf-using-itext
 	 */
 	public void generate(Event event) {
 		child = event.getAge() < event.MAX_TEEN_AGE;
 		saveCard(event);
 		try {
-			document = new Document();
+			Document doc = new Document();
 			String filename = PlatformUtil.getPath(Activator.PLUGIN_ID, "/out/horoscope.pdf").getPath();
-	        writer = PdfWriter.getInstance(document, new FileOutputStream(filename));
-	        document.open();
+			PdfWriter writer = PdfWriter.getInstance(doc, new FileOutputStream(filename));
+	        writer.setPageEvent(new FooterEventHandler(doc));
+	        doc.open();
 
 	        //metadata
-	        document.addTitle("Индивидуальный гороскоп");
-	        document.addSubject("Астрологический сервис Звездочёт");
-	        document.addKeywords("гороскоп, звездочёт, сидерическая астрология");
-	        document.addAuthor("Наталья Диденко");
-	        document.addCreator("Наталья Диденко");
-	        document.addCreationDate();
+	        doc.addTitle("Индивидуальный гороскоп");
+	        doc.addSubject("Астрологический сервис Звездочёт");
+	        doc.addKeywords("гороскоп, звездочёт, сидерическая астрология");
+	        doc.addAuthor("Наталья Диденко");
+	        doc.addCreator("Наталья Диденко");
+	        doc.addCreationDate();
 
-	        PdfContentByte cb = writer.getDirectContent();
-	        float width = PageSize.A4.getWidth();
-	        float height = PageSize.A4.getHeight();
+//	        PdfContentByte cb = writer.getDirectContent();
+//	        float width = PageSize.A4.getWidth();
+//	        float height = PageSize.A4.getHeight();
 
-	        printCopyright();
-	        
+			//дата события
+			Place place = event.getPlace();
+			if (null == place)
+				place = new Place().getDefault();
+			String text = DateUtil.fulldtf.format(event.getBirth()) +
+				" " + (event.getZone() >= 0 ? "UTC+" : "") + event.getZone() +
+				" " + (event.getDst() >= 0 ? "DST+" : "") + event.getDst() + 
+				" " + place.getName() +
+				" " + place.getLatitude() + "°" +
+				", " + place.getLongitude() + "°";
+			printHeader(doc, text);
+
 	        //якорь
 	        Anchor anchor = new Anchor("First page of the document.");
 	        anchor.setName("BackToTop");
-	        Paragraph paragraph = new Paragraph();
-	        paragraph.setSpacingBefore(50);
-	        paragraph.add(anchor);
-	        document.add(paragraph);
+	        Paragraph p = new Paragraph();
+	        p.setSpacingBefore(50);
+	        p.add(anchor);
+	        doc.add(p);
 
 	        //абзац
-	        document.add(new Paragraph("Some more text on the first page with different color and font type.", font));
+	        doc.add(new Paragraph("Some more text on the first page with different color and font type.", font));
 	        String html = "<ul><li><b>очаровательная, ласковая, приторно-нежная</b>. Застенчивая, немного задиристая, с детскими вспышками раздражения. Считает, что рождена для любви, и может добровольно стать смиренной до рабства. Слишком переоценивает своего мужчину, ищет в нём идеального отца;</li><li><b>дама со строптивым характером</b>, пытающаяся водрузить себя на пьедестал, внушить окружающим чувство недосягаемости своей любви.</li></ul>";
 	        InputStream is = new ByteArrayInputStream(html.getBytes());
-	        XMLWorkerHelper.getInstance().parseXHtml(writer, document, is, Charset.forName("UTF-8"));
+	        XMLWorkerHelper.getInstance().parseXHtml(writer, doc, is, Charset.forName("UTF-8"));
 //	        document.add(new Paragraph(html, font));
 	  
 	        //глава
 	        Paragraph title1 = new Paragraph("Chapter 1", fonth1);
 			Chapter chapter1 = new Chapter(title1, 1);
 			chapter1.setNumberDepth(0);
-			document.add(chapter1);
+			doc.add(chapter1);
 			
 			//секция
 			Paragraph title11 = new Paragraph("This is Section 1 in Chapter 1", fonth3);
@@ -165,7 +189,7 @@ public class PDFExporter {
 			Anchor anchor2 = new Anchor("Back To Top");
 			anchor2.setReference("#BackToTop");
 			section1.add(anchor2);
-			document.add(section1);
+			doc.add(section1);
 
 	        // Pie chart
 //			PdfTemplate pie = cb.createTemplate(width, height);
@@ -195,8 +219,10 @@ public class PDFExporter {
 //	        chart.draw(g2d2, r2d2);
 //	        g2d2.dispose();
 //	        cb.addTemplate(bar, 0, 0);
-		        
-	        document.close();			
+
+	        printCopyright(doc);
+
+	        doc.close();			
 			
 			
 			
@@ -336,18 +362,181 @@ public class PDFExporter {
 	/**
 	 * Отображение информации о копирайте
 	 */
-	private void printCopyright() {
+	private void printCopyright(Document doc) {
 		try {
-		    String html = "&copy; 1998-" + Calendar.getInstance().get(Calendar.YEAR) +
-		    		" Астрологический сервис" + "<a href='https://zvezdochet.guru' target='_blank'>«Звездочёт»</a>" +
-		    		" &mdash; Взгляни на себя в прошлом, настоящем и будущем";
+			Font font = new Font(baseFont, 10, Font.NORMAL);
+			Font fonta = new Font(baseFont, 10, Font.UNDERLINE, new BaseColor(102, 102, 153));
 
-		    InputStream is = new ByteArrayInputStream(html.getBytes());
-		    XMLWorkerHelper.getInstance().parseXHtml(writer, document, is, Charset.forName("UTF-8"));
-//		    document.add(new Paragraph(html, font));
-//		    htmlWorker.parse(new StringReader(k));
+	        Paragraph paragraph = new Paragraph();
+	        paragraph.setAlignment(Element.ALIGN_CENTER);
+	        Chunk chunk = new Chunk("© 1998-" + Calendar.getInstance().get(Calendar.YEAR) + " Астрологический сервис ", font);
+	        paragraph.add(chunk);
+	        chunk = new Chunk("Звездочёт", fonta);
+	        chunk.setAnchor("https://zvezdochet.guru");
+	        paragraph.add(chunk);
+	        doc.add(paragraph);
 		} catch (Exception e) {
 		    e.printStackTrace();
+		}
+	}
+
+    private void printBreak(Document doc, int number) {
+		try {
+			for (int i = 0; i < number; i++)
+				doc.add(new Paragraph(" "));
+			
+//			Chunk linebreak = new Chunk(new DottedLineSeparator());
+//			doc.Add(linebreak);  
+		} catch (DocumentException e) {
+			e.printStackTrace();
+		}
+    }
+
+    public void watermarkText(String src, String dest) throws IOException, DocumentException {
+        PdfReader reader = new PdfReader(src);
+        int n = reader.getNumberOfPages();
+        PdfStamper stamper = new PdfStamper(reader, new FileOutputStream(dest));
+        PdfContentByte under = stamper.getUnderContent(1);
+        Font f = new Font(FontFamily.HELVETICA, 15);
+        Phrase p = new Phrase(
+            "This watermark is added UNDER the existing content", f);
+        ColumnText.showTextAligned(under, Element.ALIGN_CENTER, p, 297, 550, 0);
+        PdfContentByte over = stamper.getOverContent(1);
+        p = new Phrase("This watermark is added ON TOP OF the existing content", f);
+        ColumnText.showTextAligned(over, Element.ALIGN_CENTER, p, 297, 500, 0);
+        p = new Phrase(
+            "This TRANSPARENT watermark is added ON TOP OF the existing content", f);
+        over.saveState();
+        PdfGState gs1 = new PdfGState();
+        gs1.setFillOpacity(0.5f);
+        over.setGState(gs1);
+        ColumnText.showTextAligned(over, Element.ALIGN_CENTER, p, 297, 450, 0);
+        over.restoreState();
+        stamper.close();
+        reader.close();
+    }
+
+    public void watermarkImg() {
+//    	Document document = new Document();
+//    	PdfReader pdfReader = new PdfReader(strFileLocation);
+//    	PdfStamper pdfStamper = new PdfStamper(pdfReader, new FileStream(strFileLocationOut, FileMode.Create, FileAccess.Write, FileShare.None));
+//    	iTextSharp.text.Image img = iTextSharp.text.Image.GetInstance(WatermarkLocation);
+//    	
+//    	Rectangle pagesize = reader.getCropBox(pageIndex);
+//    	if (pagesize == null)
+//    	    pagesize = reader.getMediaBox(pageIndex);
+//    	img.SetAbsolutePosition(
+//    	    pagesize.GetLeft(),
+//    	    pagesize.GetBottom());
+//    	
+//    	img.SetAbsolutePosition(100, 300);
+//    	PdfContentByte waterMark;
+//    	for (int pageIndex = 1; pageIndex <= pdfReader.NumberOfPages; pageIndex++) {
+//    	    waterMark = pdfStamper.GetOverContent(pageIndex);
+//    	    waterMark.AddImage(img);
+//    	}
+//    	pdfStamper.FormFlattening = true;
+//    	pdfStamper.Close();
+	}
+
+    protected class FooterEventHandler implements PdfPageEvent {
+        protected Document doc;
+
+        public FooterEventHandler(Document doc) {
+            this.doc = doc;
+        }
+		
+		@Override
+		public void onStartPage(PdfWriter arg0, Document arg1) {
+			// TODO Auto-generated method stub
+		}
+		
+		@Override
+		public void onSectionEnd(PdfWriter arg0, Document arg1, float arg2) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void onSection(PdfWriter arg0, Document arg1, float arg2, int arg3, Paragraph arg4) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void onParagraphEnd(PdfWriter arg0, Document arg1, float arg2) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void onParagraph(PdfWriter arg0, Document arg1, float arg2) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void onOpenDocument(PdfWriter arg0, Document arg1) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void onGenericTag(PdfWriter arg0, Document arg1, Rectangle arg2, String arg3) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void onEndPage(PdfWriter writer, Document doc) {
+			//колонтитулы
+			PdfContentByte cb = writer.getDirectContent();
+			Font fonth = new Font(baseFont, 10, Font.NORMAL, new BaseColor(153, 153, 153));
+			float y = (doc.right() - doc.left()) / 2 + doc.leftMargin();
+	        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase("Звездочёт", fonth),
+	        	y, doc.top() + 10, 0);
+	        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase(String.valueOf(writer.getPageNumber()), fonth),
+	        	y, doc.bottom(), 0);
+		}
+		
+		@Override
+		public void onCloseDocument(PdfWriter arg0, Document arg1) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void onChapterEnd(PdfWriter arg0, Document arg1, float arg2) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void onChapter(PdfWriter arg0, Document arg1, float arg2, Paragraph arg3) {
+			// TODO Auto-generated method stub
+			
+		}
+    }
+
+    private void printHeader(Document doc, String text) {
+		try {
+	        printBreak(doc, 1);
+			Font fonth3w = new Font(baseFont, 10, Font.BOLD, new BaseColor(255, 255, 255));
+	        Chunk chunk = new Chunk(text, fonth3w);
+	        chunk.setBackground(new BaseColor(153, 153, 204));
+	        chunk.setLineHeight(14);
+	        Paragraph p = new Paragraph();
+	        p.setAlignment(Element.ALIGN_CENTER);
+	//        p.setSpacingBefore(1);
+	//        p.setSpacingAfter(1);
+	        p.setLeading(0, 4);
+	        p.add(chunk);
+	//        p.setIndentationLeft(5);
+	//        p.setIndentationRight(5);
+			doc.add(p);
+		} catch (DocumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 }
