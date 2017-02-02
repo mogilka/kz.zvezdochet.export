@@ -1,11 +1,16 @@
 package kz.zvezdochet.export.exporter;
 
-import java.io.ByteArrayInputStream;
+import java.awt.Graphics2D;
+import java.awt.geom.Rectangle2D;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
@@ -15,10 +20,16 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.widgets.Display;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PiePlot;
+import org.jfree.data.general.DefaultPieDataset;
 
-import com.itextpdf.text.Anchor;
+import com.itextpdf.awt.DefaultFontMapper;
+import com.itextpdf.awt.PdfGraphics2D;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Chapter;
+import com.itextpdf.text.ChapterAutoNumber;
 import com.itextpdf.text.Chunk;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
@@ -26,7 +37,6 @@ import com.itextpdf.text.Element;
 import com.itextpdf.text.Font;
 import com.itextpdf.text.Font.FontFamily;
 import com.itextpdf.text.ListItem;
-import com.itextpdf.text.PageSize;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Phrase;
 import com.itextpdf.text.Rectangle;
@@ -40,14 +50,20 @@ import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfPageEvent;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.PdfStamper;
+import com.itextpdf.text.pdf.PdfTemplate;
 import com.itextpdf.text.pdf.PdfWriter;
-import com.itextpdf.tool.xml.XMLWorkerHelper;
+import com.itextpdf.text.pdf.draw.LineSeparator;
 
 import kz.zvezdochet.bean.Event;
 import kz.zvezdochet.bean.Place;
+import kz.zvezdochet.bean.Sign;
+import kz.zvezdochet.core.bean.Model;
 import kz.zvezdochet.core.util.DateUtil;
 import kz.zvezdochet.core.util.PlatformUtil;
 import kz.zvezdochet.export.Activator;
+import kz.zvezdochet.export.util.EventStatistics;
+import kz.zvezdochet.service.EventService;
+import kz.zvezdochet.service.SignService;
 import kz.zvezdochet.util.Cosmogram;
 
 /**
@@ -71,17 +87,15 @@ public class PDFExporter {
 	private boolean child = false;
 	private Display display;
 	private BaseFont baseFont;
-	private Font font, fonth1, fonth3, fonta;
+	private Font font, fonta;
 
 	public PDFExporter(Display display) {
 		this.display = display;
 		try {
-			baseFont = BaseFont.createFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+			baseFont = BaseFont.createFont("/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-R.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
 //			BaseFont baseFontBold = BaseFont.createFont("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
 //			FontFamily fontFamily = Font.FontFamily.HELVETICA;
 			font = new Font(baseFont, 12, Font.NORMAL);
-			fonth1 = new Font(baseFont, 20, Font.BOLD, new BaseColor(51, 51, 102));
-			fonth3 = new Font(baseFont, 16, Font.BOLD, new BaseColor(102, 102, 153));
 			fonta = new Font(baseFont, 12, Font.UNDERLINE, new BaseColor(102, 102, 153));
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -99,7 +113,7 @@ public class PDFExporter {
 			Document doc = new Document();
 			String filename = PlatformUtil.getPath(Activator.PLUGIN_ID, "/out/horoscope.pdf").getPath();
 			PdfWriter writer = PdfWriter.getInstance(doc, new FileOutputStream(filename));
-	        writer.setPageEvent(new FooterEventHandler(doc));
+	        writer.setPageEvent(new PageEventHandler(doc));
 	        doc.open();
 
 	        //metadata
@@ -110,11 +124,12 @@ public class PDFExporter {
 	        doc.addCreator("Наталья Диденко");
 	        doc.addCreationDate();
 
-//	        PdfContentByte cb = writer.getDirectContent();
-//	        float width = PageSize.A4.getWidth();
-//	        float height = PageSize.A4.getHeight();
+	        //раздел
+			Chapter chapter = new ChapterAutoNumber("Общая информация");
+			chapter.setNumberDepth(0);
 
 			//дата события
+			Paragraph p = new Paragraph();
 			Place place = event.getPlace();
 			if (null == place)
 				place = new Place().getDefault();
@@ -124,73 +139,37 @@ public class PDFExporter {
 				" " + place.getName() +
 				" " + place.getLatitude() + "°" +
 				", " + place.getLongitude() + "°";
-			printHeader(doc, text);
+			printHeader(p, text);
+			chapter.add(p);
 
-	        //якорь
-	        Anchor anchor = new Anchor("First page of the document.");
-	        anchor.setName("BackToTop");
-	        Paragraph p = new Paragraph();
-	        p.setSpacingBefore(50);
-	        p.add(anchor);
-	        doc.add(p);
+			chapter.add(new Paragraph("Гороскоп описывает вашу личность как с позиции силы, так и с позиции слабости. "
+				+ "Психологи утверждают, что развивать слабые стороны бессмысленно, лучше акцентироваться на достоинствах, это более эффективно. "
+				+ "Не зацикливайтесь на недостатках. Искренне занимайтесь тем, к чему лежит душа, используя благоприятные возможности. "
+				+ "Судьба и так сделает всё, чтобы помочь вам закалить ваш характер.", font));
 
-	        //абзац
-	        doc.add(new Paragraph("Some more text on the first page with different color and font type.", font));
-	        String html = "<ul><li><b>очаровательная, ласковая, приторно-нежная</b>. Застенчивая, немного задиристая, с детскими вспышками раздражения. Считает, что рождена для любви, и может добровольно стать смиренной до рабства. Слишком переоценивает своего мужчину, ищет в нём идеального отца;</li><li><b>дама со строптивым характером</b>, пытающаяся водрузить себя на пьедестал, внушить окружающим чувство недосягаемости своей любви.</li></ul>";
-	        InputStream is = new ByteArrayInputStream(html.getBytes());
-	        XMLWorkerHelper.getInstance().parseXHtml(writer, doc, is, Charset.forName("UTF-8"));
-//	        document.add(new Paragraph(html, font));
-	  
-	        //глава
-	        Paragraph title1 = new Paragraph("Chapter 1", fonth1);
-			Chapter chapter1 = new Chapter(title1, 1);
-			chapter1.setNumberDepth(0);
-			doc.add(chapter1);
+			//знаменитости
+			printCelebrities(chapter, event.getBirth());
+			printSimilar(chapter, event);
 			
-			//секция
-			Paragraph title11 = new Paragraph("This is Section 1 in Chapter 1", fonth3);
-			Section section1 = chapter1.addSection(title11);
-			Paragraph someSectionText = new Paragraph("This text comes as part of section 1 of chapter 1.");
-			section1.add(someSectionText);
-			someSectionText = new Paragraph("Following is a 3 X 2 table.");
-			section1.add(someSectionText);
-				
-			//таблица
-			PdfPTable t = new PdfPTable(3);
-			t.setSpacingBefore(25);
-			t.setSpacingAfter(25);
-			PdfPCell c1 = new PdfPCell(new Phrase("Header1"));  
-			t.addCell(c1);
-			PdfPCell c2 = new PdfPCell(new Phrase("Header2"));
-			t.addCell(c2);
-			PdfPCell c3 = new PdfPCell(new Phrase("Header3"));
-			t.addCell(c3);
-			t.addCell("1.1");
-			t.addCell("1.2");
-			t.addCell("1.3");
-			section1.add(t);
-			      
-			//список
-			com.itextpdf.text.List l = new com.itextpdf.text.List(true, false, 10);
-			l.add(new ListItem("First item of list"));
-			l.add(new ListItem("Second item of list"));
-			section1.add(l);
-			      
+			//знаки
+			EventStatistics statistics = new EventStatistics(event.getConfiguration());
+			Map<String, Double> signMap = statistics.getPlanetSigns(true);
+			printSigns(writer, chapter, signMap);
+			statistics.initPlanetHouses();
+
+			
+			
+			
+			doc.add(chapter);
+
+
 			//изображение
 			String card = PlatformUtil.getPath(Activator.PLUGIN_ID, "/out/horoscope_files/card.png").getPath();
 			com.itextpdf.text.Image image2 = com.itextpdf.text.Image.getInstance(card);
 			image2.scaleAbsolute(120f, 120f);
+			Section section1 = chapter.addSection("section");
 			section1.add(image2);
 			      
-			//Добавление якоря в основной документ
-			Paragraph title2 = new Paragraph("Using Anchor", font);
-			section1.add(title2);
-			title2.setSpacingBefore(5000);
-			Anchor anchor2 = new Anchor("Back To Top");
-			anchor2.setReference("#BackToTop");
-			section1.add(anchor2);
-			doc.add(section1);
-
 	        // Pie chart
 //			PdfTemplate pie = cb.createTemplate(width, height);
 //			Graphics2D g2d1 = new PdfGraphics2D(pie, width, height);
@@ -221,113 +200,7 @@ public class PDFExporter {
 //	        cb.addTemplate(bar, 0, 0);
 
 	        printCopyright(doc);
-
 	        doc.close();			
-			
-			
-			
-//			title.add("Индивидуальный гороскоп");
-//			head.add(title);
-//			html.add(head);
-//
-//			Tag body = new Tag("body");
-//			body.add(printCopyright());
-//			Tag table = new Tag("table");
-//			body.add(table);
-//			body.add(printCopyright());
-//			html.add(body);
-//	
-//			//дата события
-//			Tag row = new Tag("tr");
-//			Tag cell = new Tag("td", "class=mainheader");
-//			cell.add(DateUtil.fulldtf.format(event.getBirth()) +
-//				"&ensp;" + (event.getZone() > 0 ? "+" : "") + event.getZone() +
-//				"&emsp;" + event.getPlace().getName() +
-//				"&ensp;" + event.getPlace().getLatitude() + "&#176;" +
-//				", " + event.getPlace().getLongitude() + "&#176;");
-//			row.add(cell);
-//			table.add(row);
-//			
-//			//содержание
-//			row = new Tag("tr");
-//			cell = new Tag("td");
-//			generateContents(event, cell);
-//			row.add(cell);
-//			table.add(row);
-//	
-//			//знаменитости
-//			generateCelebrities(event.getBirth(), table);
-//			generateSimilar(event, table);
-//
-//			//основные диаграммы
-//			EventStatistics statistics = new EventStatistics(event.getConfiguration());
-//			Map<String, Double> signMap = statistics.getPlanetSigns(true);
-//			//знаки
-//			generateSignChart(table, signMap);
-//			//дома
-//			statistics.initPlanetHouses();
-////			generateHouseChart(statistics, table);
-//			
-//			//градус рождения
-//			generateDegree(event, table);
-//			
-//			//планеты в знаках
-//			generatePlanetsInSigns(event, table);
-//			
-//			//космограмма
-//			generateCard(event, table);
-//			
-//			//вид космограммы
-//			//generateCardKarma(event, table); 
-//
-//			//тип космограммы
-//			Map<String, Integer> signPlanetsMap = statistics.getSignPlanets();
-//			generateCardType(event, table, signPlanetsMap);
-//			
-//			//выделенность стихий
-//			statistics.initPlanetDivisions();
-//			statistics.initHouseDivisions();
-//			generateElements(event, table, statistics);
-//	
-//			//выделенность инь-ян
-//			generateYinYang(event, table, statistics);
-//			
-//			//выделенность полусфер
-//			generateHalfSpheres(event, table, statistics);
-//			
-//			//выделенность квадратов
-//			signMap = statistics.getPlanetSigns(false);
-//			generateSquares(event, table, statistics);
-//			
-//			//выделенность крестов
-//			generateCrosses(event, table, statistics);
-//			
-//			//выделенность зон
-//			generateZones(event, table, statistics);
-//			
-//			//аспекты
-//			generateAspectTypes(event, table);
-//			//позитивные аспекты
-//			generateAspects(event, table, "Позитивные аспекты планет", "POSITIVE");
-//			//негативные аспекты
-//			generateAspects(event, table, "Негативные аспекты планет", "NEGATIVE");
-//			//конфигурации аспектов
-//			//generateAspectConfigurations(event, table);
-//			
-//			//планеты
-//			generatePlanets(event, table);
-//			
-//			//планеты в домах
-//			Map<String, Double> houseMap = statistics.getPlanetHouses();
-//			generatePlanetInHouses(event, table, houseMap);
-//			//дома в знаках
-//			//generateHouseInSigns(event, table, houseMap);
-//			document.close();
-//			
-//			if (html != null) {
-////				System.out.println(html);
-//				export(html.toString());
-//			}
 		} catch(Exception e) {
 			MessageDialog.openError(Display.getDefault().getActiveShell(), "Ошибка", e.getMessage());
 			e.printStackTrace();
@@ -439,10 +312,10 @@ public class PDFExporter {
 //    	pdfStamper.Close();
 	}
 
-    protected class FooterEventHandler implements PdfPageEvent {
+    protected class PageEventHandler implements PdfPageEvent {
         protected Document doc;
 
-        public FooterEventHandler(Document doc) {
+        public PageEventHandler(Document doc) {
             this.doc = doc;
         }
 		
@@ -493,7 +366,7 @@ public class PDFExporter {
 			PdfContentByte cb = writer.getDirectContent();
 			Font fonth = new Font(baseFont, 10, Font.NORMAL, new BaseColor(153, 153, 153));
 			float y = (doc.right() - doc.left()) / 2 + doc.leftMargin();
-	        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase("Звездочёт", fonth),
+	        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase("Астрологический сервис Звездочёт", fonth),
 	        	y, doc.top() + 10, 0);
 	        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase(String.valueOf(writer.getPageNumber()), fonth),
 	        	y, doc.bottom(), 0);
@@ -518,24 +391,202 @@ public class PDFExporter {
 		}
     }
 
-    private void printHeader(Document doc, String text) {
+    /**
+     * @param container
+     * @param text
+     * http://developers.itextpdf.com/examples/itext-action-second-edition/chapter-5#225-moviecountries1.java
+     */
+    private void printHeader(Paragraph container, String text) {
 		try {
-	        printBreak(doc, 1);
 			Font fonth3w = new Font(baseFont, 10, Font.BOLD, new BaseColor(255, 255, 255));
-	        Chunk chunk = new Chunk(text, fonth3w);
-	        chunk.setBackground(new BaseColor(153, 153, 204));
-	        chunk.setLineHeight(14);
-	        Paragraph p = new Paragraph();
-	        p.setAlignment(Element.ALIGN_CENTER);
-	//        p.setSpacingBefore(1);
-	//        p.setSpacingAfter(1);
-	        p.setLeading(0, 4);
-	        p.add(chunk);
-	//        p.setIndentationLeft(5);
-	//        p.setIndentationRight(5);
-			doc.add(p);
-		} catch (DocumentException e) {
-			// TODO Auto-generated catch block
+
+            PdfPTable table = new PdfPTable(1);
+            table.setWidthPercentage(100);
+            table.setSpacingBefore(1);
+//            table.setPadding(4);
+            // t.setSpacing(4);
+            // t.setBorderWidth(1);
+
+            PdfPCell cell = new PdfPCell(new Phrase(text, fonth3w));
+            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            cell.setBackgroundColor(new BaseColor(153, 153, 204));
+            cell.setBorder(PdfPCell.NO_BORDER);
+            cell.setPadding(5);
+            table.addCell(cell);
+            container.add(table);
+			
+//	        Chunk chunk = new Chunk(text, fonth3w);
+//	        chunk.setBackground(new BaseColor(153, 153, 204));
+//	        chunk.setLineHeight(14);
+//	        Paragraph p = new Paragraph();
+//	        p.setAlignment(Element.ALIGN_CENTER);
+//	//        p.setSpacingBefore(1);
+//	//        p.setSpacingAfter(1);
+//	        p.setLeading(0, 4);
+//	        p.add(chunk);
+//	//        p.setIndentationLeft(5);
+//	//        p.setIndentationRight(5);
+//			doc.add(p);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Генерация знаменитостей
+	 * @param date дата события
+	 * @param cell тег-контейнер для вложенных тегов
+	 */
+	private void printCelebrities(Chapter chapter, Date date) {
+		try {
+			List<Event> events = new EventService().findEphemeron(date);
+			if (events != null && events.size() > 0) {
+				Section section = printSection(chapter, "Однодневки");
+				section.add(new Paragraph("В один день с вами родились такие известные люди:", font));
+
+				com.itextpdf.text.List list = new com.itextpdf.text.List(false, false, 10);
+				for (Model model : events) {
+					Event event = (Event)model;
+					ListItem li = new ListItem();
+			        Chunk chunk = new Chunk(DateUtil.formatDate(event.getBirth()), font);
+			        li.add(chunk);
+
+			        chunk = new Chunk("  ");
+			        li.add(chunk);
+			        chunk = new Chunk(event.getName(), fonta);
+			        chunk.setAnchor(event.getUrl());
+			        li.add(chunk);
+
+			        chunk = new Chunk("   " + event.getDescription(), font);
+			        li.add(chunk);
+			        list.add(li);
+				}
+				section.add(list);
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void printHr(Paragraph paragraph) {
+		paragraph.add(new Chunk(new LineSeparator(2, 100, new BaseColor(102, 102, 153), Element.ALIGN_CENTER, 0)));	
+	}
+
+	private Section printSection(Chapter chapter, String text) {
+		Font fonth3 = new Font(baseFont, 16, Font.BOLD, new BaseColor(102, 102, 153));
+		Paragraph p = new Paragraph(text, fonth3);
+		p.setSpacingBefore(10);
+		p.add(Chunk.NEWLINE);
+		printHr(p);
+		return chapter.addSection(p);
+	}
+
+	/**
+	 * Генерация похожих по характеру знаменитостей
+	 * @param date дата события
+	 * @param cell тег-контейнер для вложенных тегов
+	 */
+	private void printSimilar(Chapter chapter, Event event) {
+		try {
+			List<Model> events = new EventService().findSimilar(event, 1);
+			if (events != null && events.size() > 0) {
+				Section section = printSection(chapter, "Близкие по духу");
+				section.add(new Paragraph("Известные люди, похожие на вас по характеру:", font));
+
+				com.itextpdf.text.List list = new com.itextpdf.text.List(false, false, 10);
+				for (Model model : events) {
+					Event man = (Event)model;
+					ListItem li = new ListItem();
+			        Chunk chunk = new Chunk(DateUtil.formatDate(man.getBirth()), font);
+			        li.add(chunk);
+
+			        chunk = new Chunk("  ");
+			        li.add(chunk);
+			        chunk = new Chunk(man.getName(), fonta);
+			        chunk.setAnchor(man.getUrl());
+			        li.add(chunk);
+
+			        chunk = new Chunk("   " + man.getDescription(), font);
+			        li.add(chunk);
+			        list.add(li);
+				}
+				section.add(list);
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Генерация диаграмм знаков
+	 * @param cell тег-контейнер для вложенных тегов
+	 * @param signMap карта знаков
+	 */
+	private void printSigns(PdfWriter writer, Chapter chapter, Map<String, Double> signMap) {
+		try {
+			//выраженные знаки
+			Section section = printSection(chapter, "Знаки Зодиака");
+
+		    DefaultFontMapper mapper = new DefaultFontMapper();
+		    mapper.insertDirectory("/usr/share/fonts/truetype/ubuntu-font-family");
+		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters("Ubuntu");
+		    if (pp != null)
+		        pp.encoding = BaseFont.IDENTITY_H;
+
+		    PdfContentByte cb = writer.getDirectContent();
+	        float width = 320;
+	        float height = 240;
+
+			PdfTemplate tpl = cb.createTemplate(width, height);
+			Graphics2D g2d = new PdfGraphics2D(tpl, width, height, mapper);
+			Rectangle2D r2d = new Rectangle2D.Double(0, 0, width, height);
+
+			DefaultPieDataset dataset = new DefaultPieDataset();
+			Iterator<Map.Entry<String, Double>> iterator = signMap.entrySet().iterator();
+			SignService service = new SignService();
+			List<Sign> signs = new ArrayList<Sign>();
+		    while (iterator.hasNext()) {
+		    	Entry<String, Double> entry = iterator.next();
+		    	Sign sign = (Sign)service.find(entry.getKey());
+		    	signs.add(sign);
+				dataset.setValue(sign.getName(), entry.getValue());
+		    }
+
+		    String header = "Выраженные знаки Зодиака";
+		    JFreeChart chart = ChartFactory.createPieChart(header, dataset, true, true, false);
+            java.awt.Font font = new java.awt.Font("Ubuntu", java.awt.Font.PLAIN, 12);
+            chart.getTitle().setFont(font);
+            PiePlot plot = (PiePlot)chart.getPlot();
+            plot.setBackgroundPaint(new java.awt.Color(204, 204, 255));
+            plot.setOutlineVisible(false);
+            java.awt.Font sfont = new java.awt.Font("Ubuntu", java.awt.Font.PLAIN, 10);
+            chart.getLegend().setItemFont(sfont);
+
+            for (Sign sign : signs) {
+            	Color color = sign.getColor();
+            	plot.setSectionPaint(sign.getName(), new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue()));
+            	plot.setLabelFont(sfont);
+            }
+			chart.draw(g2d, r2d);
+			g2d.dispose();
+
+			com.itextpdf.text.Image image = com.itextpdf.text.Image.getInstance(tpl);
+			section.add(image);
+	
+			//кредо
+//			tr = new Tag("tr");
+//			td = new Tag("td", "class=header id=credo");
+//			td.add("Кредо вашей жизни");
+//			tr.add(td);
+//			cell.add(tr);
+//	
+//			tr = new Tag("tr");
+//			td = new Tag("td");
+//			chart = util.getTaggedChart(17, bars2, null);
+//			td.add(chart);
+//			tr.add(td);
+//			cell.add(tr);
+		} catch(Exception e) {
 			e.printStackTrace();
 		}
 	}
