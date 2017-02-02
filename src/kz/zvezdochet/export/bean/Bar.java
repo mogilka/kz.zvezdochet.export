@@ -20,7 +20,17 @@ public class Bar {
 	 * Цвет
 	 */
 	private Color color;
+	/**
+	 * Категория
+	 */
+	private String category;
 	
+	public String getCategory() {
+		return category;
+	}
+	public void setCategory(String category) {
+		this.category = category;
+	}
 	public String getName() {
 		return name;
 	}

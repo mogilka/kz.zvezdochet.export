@@ -1,11 +1,12 @@
 package kz.zvezdochet.export.util;
 
+import org.eclipse.swt.graphics.Color;
+
 import html.Tag;
+import kz.zvezdochet.core.bean.TextGender;
 import kz.zvezdochet.core.util.CalcUtil;
 import kz.zvezdochet.core.util.CoreUtil;
 import kz.zvezdochet.export.bean.Bar;
-
-import org.eclipse.swt.graphics.Color;
 
 /**
  * Набор утилит для html-экспорта
@@ -357,5 +358,18 @@ public class HTMLUtil {
 		}
 		div.add(ul);
 		return div;
+	}
+
+	/**
+	 * Печать текста для мужчин, женщин, детей
+	 * @param gender объект текста для разных полов
+	 * @param cell тег-контейнер для вложенных тегов
+	 */
+	public void printGenderText(TextGender gender, Tag cell) {
+		if (gender != null) {
+			Tag tag = this.getGenderHeader(gender.getType());
+			cell.add(tag); //заголовок
+			cell.add(gender.getText()); //текст
+		}
 	}
 }
