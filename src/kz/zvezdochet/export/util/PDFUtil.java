@@ -6,6 +6,7 @@ import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.nio.charset.Charset;
 import java.util.Calendar;
 
@@ -40,11 +41,22 @@ import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfTemplate;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.itextpdf.text.pdf.draw.LineSeparator;
+import com.itextpdf.tool.xml.ElementList;
+import com.itextpdf.tool.xml.XMLWorker;
 import com.itextpdf.tool.xml.XMLWorkerFontProvider;
 import com.itextpdf.tool.xml.XMLWorkerHelper;
+import com.itextpdf.tool.xml.css.CssFile;
+import com.itextpdf.tool.xml.html.Tags;
+import com.itextpdf.tool.xml.parser.XMLParser;
+import com.itextpdf.tool.xml.pipeline.css.CSSResolver;
+import com.itextpdf.tool.xml.pipeline.css.CssResolverPipeline;
+import com.itextpdf.tool.xml.pipeline.end.ElementHandlerPipeline;
+import com.itextpdf.tool.xml.pipeline.html.HtmlPipeline;
+import com.itextpdf.tool.xml.pipeline.html.HtmlPipelineContext;
 
 import kz.zvezdochet.core.util.PlatformUtil;
 import kz.zvezdochet.export.bean.Bar;
+import kz.zvezdochet.export.handler.HtmlElementHandler;
 
 /**
  * Набор утилит для pdf-экспорта
@@ -412,9 +424,30 @@ public class PDFUtil {
 		try {
 			InputStream is = new ByteArrayInputStream(html.getBytes("UTF-8"));
 			FileInputStream fis = new FileInputStream(PlatformUtil.getPath(kz.zvezdochet.export.Activator.PLUGIN_ID, "/export.css").getPath());
-		    XMLWorkerFontProvider provider = new XMLWorkerFontProvider(FONTDIR);
-		    FontFactory.setFontImp(provider);
-		    XMLWorkerHelper.getInstance().parseXHtml(writer, doc, is, fis, Charset.forName("UTF-8"), provider);
+//		    XMLWorkerFontProvider provider = new XMLWorkerFontProvider(FONTDIR);
+//		    FontFactory.setFontImp(provider);
+//		    XMLWorkerHelper.getInstance().parseXHtml(writer, doc, is, fis, Charset.forName("UTF-8"), provider);
+
+		    Phrase ph = new Phrase();
+//		    Font font = FontFactory.getFont(FontFactory.getFont("Ubuntu").getFamilyname(), 12, new BaseColor(0, 102, 153));
+//		    XMLWorkerHelper.getInstance().parseXHtml(new HtmlElementHandler(ph, font), is, Charset.forName("UTF-8"));
+//		    doc.add(ph);
+
+		    HtmlPipelineContext htmlContext = new HtmlPipelineContext(null);
+            htmlContext.setTagFactory(Tags.getHtmlTagProcessorFactory());
+            ElementList elements = new ElementList();
+            ElementHandlerPipeline pdf = new ElementHandlerPipeline(elements, null);
+            HtmlPipeline pipeline = new HtmlPipeline(htmlContext, pdf);
+			CSSResolver cssResolver = XMLWorkerHelper.getInstance().getDefaultCssResolver(true);
+			CssFile cssFile = XMLWorkerHelper.getCSS(fis);
+			cssResolver.addCss(cssFile);
+			CssResolverPipeline css = new CssResolverPipeline(cssResolver, pipeline);
+			XMLWorker worker = new XMLWorker(css, true);
+		    XMLParser p = new XMLParser(worker);
+		    p.parse(is, Charset.forName("UTF-8"));
+		    ph.setFont(getRegularFont(getBaseFont()));
+		    ph.addAll(elements);
+		    doc.add(ph);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
