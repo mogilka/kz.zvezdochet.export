@@ -14,8 +14,6 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PiePlot;
-import org.jfree.chart.renderer.category.BarRenderer;
-import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
 
@@ -293,7 +291,7 @@ public class PDFUtil {
 	}
 
 	/**
-	 * Генерация диаграмм знаков
+	 * Генерация диаграммы
 	 * @param writer обработчик генерации PDF-файла
 	 * @param title заголовок диаграммы
 	 * @param cattitle заголовок категории
@@ -301,8 +299,9 @@ public class PDFUtil {
 	 * @param bars массив значений
 	 * @param width ширина диаграммы
 	 * @param height высота диаграммы
+	 * @param legend true|false присутствие|отсутствие легенды
 	 */
-	public static Image printChart(PdfWriter writer, String title, String cattitle, String valtitle, Bar[] bars, float width, float height) {
+	public static Image printChart(PdfWriter writer, String title, String cattitle, String valtitle, Bar[] bars, float width, float height, boolean legend) {
 		try {
 	        if (0 == width)
 	        	width = 320;
@@ -332,15 +331,20 @@ public class PDFUtil {
             plot.setBackgroundPaint(new java.awt.Color(230, 230, 250));
             plot.setOutlineVisible(false);
             java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 10);
-            chart.getLegend().setItemFont(sfont);
+            plot.getDomainAxis().setTickLabelFont(sfont);
 
-            ((BarRenderer)plot.getRenderer()).setBarPainter(new StandardBarPainter());
-            BarRenderer renderer = (BarRenderer)chart.getCategoryPlot().getRenderer();
-            int i = -1;
-            for (Bar bar : bars) {
-            	Color color = bar.getColor();
-            	renderer.setSeriesPaint(++i, new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue()));
-            }
+            if (legend)
+            	chart.getLegend().setItemFont(sfont);
+            else
+            	chart.getLegend().setVisible(false);
+
+//            Paint[] colors = new Paint[bars.length];
+//            int i = -1;
+//            for (Bar bar : bars) {
+//            	Color color = bar.getColor();
+//            	colors[++i] = new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue());
+//            }
+//            plot.setRenderer(new ExportBarRenderer(colors));
 			chart.draw(g2d, r2d);
 			g2d.dispose();
 			return Image.getInstance(tpl);
