@@ -62,9 +62,12 @@ import kz.zvezdochet.export.bean.Bar;
 public class PDFUtil {
 	/**
 	 * Поиск каталога размещения шрифтов
-	 * @return путь к каталогу
 	 */
 	public static String FONTDIR = "/usr/share/fonts/truetype/ubuntu-font-family";
+	/**
+	 * Поиск каталога размещения шрифтов
+	 */
+	public static String FONTFILE = "Ubuntu-R.ttf";
 
 	/**
 	 * Отображение информации о копирайте
@@ -96,7 +99,7 @@ public class PDFUtil {
 	 * @throws IOException
 	 */
 	public static BaseFont getBaseFont() throws DocumentException, IOException {
-		return BaseFont.createFont("/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-R.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+		return BaseFont.createFont(FONTDIR + "/" + FONTFILE, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
 	}
 
 	/**
@@ -154,9 +157,6 @@ public class PDFUtil {
             PdfPTable table = new PdfPTable(1);
             table.setWidthPercentage(100);
             table.setSpacingBefore(1);
-//            table.setPadding(4);
-            // t.setSpacing(4);
-            // t.setBorderWidth(1);
 
             PdfPCell cell = new PdfPCell(new Phrase(text, fonth3w));
             cell.setHorizontalAlignment(Element.ALIGN_CENTER);
@@ -165,19 +165,6 @@ public class PDFUtil {
             cell.setPadding(5);
             table.addCell(cell);
             p.add(table);
-			
-//	        Chunk chunk = new Chunk(text, fonth3w);
-//	        chunk.setBackground(new BaseColor(153, 153, 204));
-//	        chunk.setLineHeight(14);
-//	        Paragraph p = new Paragraph();
-//	        p.setAlignment(Element.ALIGN_CENTER);
-//	//        p.setSpacingBefore(1);
-//	//        p.setSpacingAfter(1);
-//	        p.setLeading(0, 4);
-//	        p.add(chunk);
-//	//        p.setIndentationLeft(5);
-//	//        p.setIndentationRight(5);
-//			doc.add(p);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -421,14 +408,6 @@ public class PDFUtil {
 		try {
 			InputStream is = new ByteArrayInputStream(html.getBytes("UTF-8"));
 			FileInputStream fis = new FileInputStream(PlatformUtil.getPath(kz.zvezdochet.export.Activator.PLUGIN_ID, "/export.css").getPath());
-//		    XMLWorkerFontProvider provider = new XMLWorkerFontProvider(FONTDIR);
-//		    FontFactory.setFontImp(provider);
-//		    XMLWorkerHelper.getInstance().parseXHtml(writer, doc, is, fis, Charset.forName("UTF-8"), provider);
-
-//		    Font font = FontFactory.getFont(FontFactory.getFont("Ubuntu").getFamilyname(), 12, new BaseColor(0, 102, 153));
-//		    XMLWorkerHelper.getInstance().parseXHtml(new HtmlElementHandler(ph, font), is, Charset.forName("UTF-8"));
-//		    doc.add(ph);
-
 		    HtmlPipelineContext htmlContext = new HtmlPipelineContext(null);
             htmlContext.setTagFactory(Tags.getHtmlTagProcessorFactory());
             ElementList elements = new ElementList();
