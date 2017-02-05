@@ -6,7 +6,6 @@ import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
 import java.nio.charset.Charset;
 import java.util.Calendar;
 
@@ -29,7 +28,6 @@ import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Element;
 import com.itextpdf.text.Font;
-import com.itextpdf.text.FontFactory;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Phrase;
@@ -43,7 +41,6 @@ import com.itextpdf.text.pdf.PdfWriter;
 import com.itextpdf.text.pdf.draw.LineSeparator;
 import com.itextpdf.tool.xml.ElementList;
 import com.itextpdf.tool.xml.XMLWorker;
-import com.itextpdf.tool.xml.XMLWorkerFontProvider;
 import com.itextpdf.tool.xml.XMLWorkerHelper;
 import com.itextpdf.tool.xml.css.CssFile;
 import com.itextpdf.tool.xml.html.Tags;
@@ -56,7 +53,6 @@ import com.itextpdf.tool.xml.pipeline.html.HtmlPipelineContext;
 
 import kz.zvezdochet.core.util.PlatformUtil;
 import kz.zvezdochet.export.bean.Bar;
-import kz.zvezdochet.export.handler.HtmlElementHandler;
 
 /**
  * Набор утилит для pdf-экспорта
@@ -420,7 +416,8 @@ public class PDFUtil {
 		return table;
 	}
 
-	public static void html2pdf(String html, PdfWriter writer, Document doc) {
+	public static Phrase html2pdf(String html) {
+	    Phrase phrase = new Phrase();
 		try {
 			InputStream is = new ByteArrayInputStream(html.getBytes("UTF-8"));
 			FileInputStream fis = new FileInputStream(PlatformUtil.getPath(kz.zvezdochet.export.Activator.PLUGIN_ID, "/export.css").getPath());
@@ -428,7 +425,6 @@ public class PDFUtil {
 //		    FontFactory.setFontImp(provider);
 //		    XMLWorkerHelper.getInstance().parseXHtml(writer, doc, is, fis, Charset.forName("UTF-8"), provider);
 
-		    Phrase ph = new Phrase();
 //		    Font font = FontFactory.getFont(FontFactory.getFont("Ubuntu").getFamilyname(), 12, new BaseColor(0, 102, 153));
 //		    XMLWorkerHelper.getInstance().parseXHtml(new HtmlElementHandler(ph, font), is, Charset.forName("UTF-8"));
 //		    doc.add(ph);
@@ -445,11 +441,11 @@ public class PDFUtil {
 			XMLWorker worker = new XMLWorker(css, true);
 		    XMLParser p = new XMLParser(worker);
 		    p.parse(is, Charset.forName("UTF-8"));
-		    ph.setFont(getRegularFont(getBaseFont()));
-		    ph.addAll(elements);
-		    doc.add(ph);
+		    phrase.setFont(getRegularFont(getBaseFont()));
+		    phrase.addAll(elements);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		return phrase;
 	}
 }
