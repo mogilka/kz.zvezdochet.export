@@ -1,0 +1,18 @@
+* { font-family: Ubuntu }
+
+table {
+	border-collapse: collapse;
+	font-size: 85.7%;
+	width: 100%;
+}
+td {
+	padding: 5px;
+	vertical-align: top;
+}
+th {
+	font-weight: bold;
+	height: 30px;
+	text-align: center;
+}
+
+ul { margin: 20px 0 }

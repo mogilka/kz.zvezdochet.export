@@ -2,7 +2,11 @@ package kz.zvezdochet.export.util;
 
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.Calendar;
 
 import org.eclipse.swt.graphics.Color;
@@ -24,6 +28,7 @@ import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Element;
 import com.itextpdf.text.Font;
+import com.itextpdf.text.FontFactory;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Phrase;
@@ -35,7 +40,10 @@ import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfTemplate;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.itextpdf.text.pdf.draw.LineSeparator;
+import com.itextpdf.tool.xml.XMLWorkerFontProvider;
+import com.itextpdf.tool.xml.XMLWorkerHelper;
 
+import kz.zvezdochet.core.util.PlatformUtil;
 import kz.zvezdochet.export.bean.Bar;
 
 /**
@@ -44,6 +52,12 @@ import kz.zvezdochet.export.bean.Bar;
  *
  */
 public class PDFUtil {
+	/**
+	 * Поиск каталога размещения шрифтов
+	 * @return путь к каталогу
+	 */
+	public static String FONTDIR = "/usr/share/fonts/truetype/ubuntu-font-family";
+
 	/**
 	 * Отображение информации о копирайте
 	 * @param baseFont базовый шрифт
@@ -220,14 +234,6 @@ public class PDFUtil {
 	}
 
 	/**
-	 * Поиск каталога размещения шрифтов
-	 * @return путь к каталогу
-	 */
-	public static String getFontDir() {
-		return "/usr/share/fonts/truetype/ubuntu-font-family";
-	}
-
-	/**
 	 * Возвращает наименование используемого шрифта
 	 * @return наименование шрифта
 	 */
@@ -242,8 +248,9 @@ public class PDFUtil {
 	 * @param bars массив значений
 	 * @param width ширина диаграммы
 	 * @param height высота диаграммы
+	 * @param legend true|false присутствие|отсутствие легенды
 	 */
-	public static Image printPie(PdfWriter writer, String title, Bar[] bars, float width, float height) {
+	public static Image printPie(PdfWriter writer, String title, Bar[] bars, float width, float height, boolean legend) {
 		try {
 	        if (0 == width)
 	        	width = 320;
@@ -251,7 +258,7 @@ public class PDFUtil {
 	        	height = 240;
 
 		    DefaultFontMapper mapper = new DefaultFontMapper();
-		    mapper.insertDirectory(getFontDir());
+		    mapper.insertDirectory(FONTDIR);
 		    String fontname = getFontName();
 		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters(fontname);
 		    if (pp != null)
@@ -266,14 +273,15 @@ public class PDFUtil {
 			for (Bar bar : bars)
 				dataset.setValue(bar.getName(), bar.getValue());
 
-		    JFreeChart chart = ChartFactory.createPieChart(title, dataset, true, true, false);
+		    JFreeChart chart = ChartFactory.createPieChart(title, dataset, legend, true, false);
             java.awt.Font font = new java.awt.Font(fontname, java.awt.Font.PLAIN, 12);
             chart.getTitle().setFont(font);
             PiePlot plot = (PiePlot)chart.getPlot();
-            plot.setBackgroundPaint(new java.awt.Color(204, 204, 255));
+            plot.setBackgroundPaint(new java.awt.Color(230, 230, 250));
             plot.setOutlineVisible(false);
             java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 10);
-            chart.getLegend().setItemFont(sfont);
+            if (legend)
+            	chart.getLegend().setItemFont(sfont);
 
             for (Bar bar : bars) {
             	Color color = bar.getColor();
@@ -293,6 +301,8 @@ public class PDFUtil {
 	 * Генерация диаграмм знаков
 	 * @param writer обработчик генерации PDF-файла
 	 * @param title заголовок диаграммы
+	 * @param cattitle заголовок категории
+	 * @param valtitle заголовок значения
 	 * @param bars массив значений
 	 * @param width ширина диаграммы
 	 * @param height высота диаграммы
@@ -305,7 +315,7 @@ public class PDFUtil {
 	        	height = 240;
 
 		    DefaultFontMapper mapper = new DefaultFontMapper();
-		    mapper.insertDirectory(getFontDir());
+		    mapper.insertDirectory(FONTDIR);
 		    String fontname = getFontName();
 		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters(fontname);
 		    if (pp != null)
@@ -324,7 +334,7 @@ public class PDFUtil {
             java.awt.Font font = new java.awt.Font(fontname, java.awt.Font.PLAIN, 12);
             chart.getTitle().setFont(font);
             CategoryPlot plot = (CategoryPlot)chart.getPlot();
-            plot.setBackgroundPaint(new java.awt.Color(204, 204, 255));
+            plot.setBackgroundPaint(new java.awt.Color(230, 230, 250));
             plot.setOutlineVisible(false);
             java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 10);
             chart.getLegend().setItemFont(sfont);
@@ -347,44 +357,66 @@ public class PDFUtil {
 
 	/**
 	 * Динамическое создание диаграммы с помощью стандартной html-таблицы
-	 * @param colnum число колонок таблицы диаграммы
+	 * @param writer обработчик генерации PDF-файла
+	 * @param maxval максимальное число значения
 	 * @param bars массив категорий диаграммы
 	 * @param title наименование диаграммы
-	 * @return тег диаграммы
+	 * @param baseFont базовый шрифт
+	 * @return табличная диаграмма
 	 */
-	public static PdfPTable printTableChart(int colnum, Bar[] bars, String title, BaseFont baseFont) {
-//		Tag div = new Tag("div", "class=chart style=height:" + (40 * bars.length) + "px");
-        PdfPTable table = new PdfPTable(colnum + 1);
-//        table.setWidthPercentage(100);
-        table.setSpacingBefore(1);
-//        table.setPadding(4);
-        // t.setSpacing(4);
-        // t.setBorderWidth(1);
-        table.setSummary(title);
-
-        Font font = new Font(baseFont, 12, Font.NORMAL, BaseColor.BLACK);
-		for (Bar bar : bars) {
-			double val = bar.getValue();
-			int value = (int)(val * 2);
-			//элемент диаграммы
-	        PdfPCell cell = new PdfPCell(new Phrase(String.valueOf(val), font));
-	        cell.setColspan(value);
-	        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-	        Color color = bar.getColor();
-	        cell.setBackgroundColor(new BaseColor(color.getRed(), color.getGreen(), color.getBlue()));
-	        cell.setBorder(PdfPCell.NO_BORDER);
-	        cell.setPadding(5);
-	        table.addCell(cell);
-
-			//числовое значение
-	        cell = new PdfPCell();
-	        cell.setColspan(colnum - value);
-	        table.addCell(cell);
-
-			//подпись
-	        cell = new PdfPCell(new Phrase(bar.getName(), font));
-	        table.addCell(cell);
+	public static PdfPTable printTableChart(PdfWriter writer, double maxval, Bar[] bars, String title, BaseFont baseFont) {
+		
+        PdfPTable table = new PdfPTable(3);
+        float height = 20;
+        float factor = 14;
+        float maxvalue = (float)maxval * factor;
+        try {
+	        table.setWidths(new float[] { maxvalue, 20, 120 });
+	        table.setSpacingBefore(10);
+	        table.setSummary(title);
+	        Font font = new Font(baseFont, 12, Font.NORMAL, BaseColor.BLACK);
+			for (Bar bar : bars) {
+				double val = bar.getValue();
+				//элемент диаграммы
+		        PdfTemplate tpl = writer.getDirectContent().createTemplate(maxvalue, height);
+		        Color color = bar.getColor();
+		        tpl.setColorFill(new BaseColor(color.getRed(), color.getGreen(), color.getBlue()));
+		        tpl.rectangle(0, 0, (float)val * factor, height);
+		        tpl.fill();
+		        writer.releaseTemplate(tpl);
+		        PdfPCell cell = new PdfPCell(Image.getInstance(tpl));
+		        cell.setBorder(PdfPCell.NO_BORDER);
+		        cell.setPadding(2);
+		        cell.setBackgroundColor(new BaseColor(230, 230, 250));
+		        table.addCell(cell);
+	
+				//числовое значение
+		        cell = new PdfPCell(new Phrase(String.valueOf(val), font));
+		        cell.setBorder(PdfPCell.NO_BORDER);
+		        cell.setBackgroundColor(new BaseColor(230, 230, 250));
+		        table.addCell(cell);
+	
+				//подпись
+		        cell = new PdfPCell(new Phrase(bar.getName(), font));
+		        cell.setBorder(PdfPCell.NO_BORDER);
+		        cell.setBackgroundColor(new BaseColor(230, 230, 250));
+		        table.addCell(cell);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		return table;
+	}
+
+	public static void html2pdf(String html, PdfWriter writer, Document doc) {
+		try {
+			InputStream is = new ByteArrayInputStream(html.getBytes("UTF-8"));
+			FileInputStream fis = new FileInputStream(PlatformUtil.getPath(kz.zvezdochet.export.Activator.PLUGIN_ID, "/export.css").getPath());
+		    XMLWorkerFontProvider provider = new XMLWorkerFontProvider(FONTDIR);
+		    FontFactory.setFontImp(provider);
+		    XMLWorkerHelper.getInstance().parseXHtml(writer, doc, is, fis, Charset.forName("UTF-8"), provider);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }
