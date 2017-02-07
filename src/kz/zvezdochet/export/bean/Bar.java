@@ -8,6 +8,18 @@ import org.eclipse.swt.graphics.Color;
  *
  */
 public class Bar {
+
+	public Bar() {
+		super();
+	}
+
+	public Bar(String name, double value, Color color, String category) {
+		super();
+		this.name = name;
+		this.value = value;
+		this.color = color;
+		this.category = category;
+	}
 	/**
 	 * Описание
 	 */

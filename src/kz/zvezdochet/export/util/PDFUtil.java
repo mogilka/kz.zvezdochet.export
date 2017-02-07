@@ -14,6 +14,9 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PiePlot;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.renderer.category.BarRenderer;
+import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
 
@@ -242,6 +245,7 @@ public class PDFUtil {
 	 * @param width ширина диаграммы
 	 * @param height высота диаграммы
 	 * @param legend true|false присутствие|отсутствие легенды
+	 * @return изображение диаграммы
 	 */
 	public static Image printPie(PdfWriter writer, String title, Bar[] bars, float width, float height, boolean legend) {
 		try {
@@ -264,7 +268,8 @@ public class PDFUtil {
 
 			DefaultPieDataset dataset = new DefaultPieDataset();
 			for (Bar bar : bars)
-				dataset.setValue(bar.getName(), bar.getValue());
+				if (bar != null)
+					dataset.setValue(bar.getName(), bar.getValue());
 
 		    JFreeChart chart = ChartFactory.createPieChart(title, dataset, legend, true, false);
             java.awt.Font font = new java.awt.Font(fontname, java.awt.Font.PLAIN, 12);
@@ -277,6 +282,8 @@ public class PDFUtil {
             	chart.getLegend().setItemFont(sfont);
 
             for (Bar bar : bars) {
+            	if (null == bar)
+            		continue;
             	Color color = bar.getColor();
             	plot.setSectionPaint(bar.getName(), new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue()));
             	plot.setLabelFont(sfont);
@@ -291,7 +298,7 @@ public class PDFUtil {
 	}
 
 	/**
-	 * Генерация диаграммы
+	 * Генерация диаграмм
 	 * @param writer обработчик генерации PDF-файла
 	 * @param title заголовок диаграммы
 	 * @param cattitle заголовок категории
@@ -300,6 +307,7 @@ public class PDFUtil {
 	 * @param width ширина диаграммы
 	 * @param height высота диаграммы
 	 * @param legend true|false присутствие|отсутствие легенды
+	 * @return изображение диаграммы
 	 */
 	public static Image printChart(PdfWriter writer, String title, String cattitle, String valtitle, Bar[] bars, float width, float height, boolean legend) {
 		try {
@@ -338,13 +346,8 @@ public class PDFUtil {
             else
             	chart.getLegend().setVisible(false);
 
-//            Paint[] colors = new Paint[bars.length];
-//            int i = -1;
-//            for (Bar bar : bars) {
-//            	Color color = bar.getColor();
-//            	colors[++i] = new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue());
-//            }
-//            plot.setRenderer(new ExportBarRenderer(colors));
+            BarRenderer renderer = (BarRenderer)plot.getRenderer();
+            renderer.setBarPainter(new StandardBarPainter());
 			chart.draw(g2d, r2d);
 			g2d.dispose();
 			return Image.getInstance(tpl);
@@ -364,7 +367,6 @@ public class PDFUtil {
 	 * @return табличная диаграмма
 	 */
 	public static PdfPTable printTableChart(PdfWriter writer, double maxval, Bar[] bars, String title, BaseFont baseFont) {
-		
         PdfPTable table = new PdfPTable(3);
         float height = 20;
         float factor = 14;
@@ -407,6 +409,11 @@ public class PDFUtil {
 		return table;
 	}
 
+	/**
+	 * Конвертация HTML-кода в PDF-текст
+	 * @param html HTML-код
+	 * @return фраза с текстом
+	 */
 	public static Phrase html2pdf(String html) {
 	    Phrase phrase = new Phrase();
 		try {
@@ -430,5 +437,66 @@ public class PDFUtil {
 			e.printStackTrace();
 		}
 		return phrase;
+	}
+
+	/**
+	 * Динамическое создание диаграммы с помощью стандартной html-таблицы
+	 * Генерация диаграмм
+	 * @param writer обработчик генерации PDF-файла
+	 * @param title заголовок диаграммы
+	 * @param cattitle заголовок категории
+	 * @param valtitle заголовок значения
+	 * @param bars массив значений
+	 * @param width ширина диаграммы
+	 * @param height высота диаграммы
+	 * @param legend true|false присутствие|отсутствие легенды
+	 * @return изображение диаграммы
+	 */
+	public static Image printStackChart(PdfWriter writer, String title, String cattitle, String valtitle, Bar[] bars, float width, float height, boolean legend) {
+		try {
+	        if (0 == width)
+	        	width = 320;
+	        if (0 == height)
+	        	height = 240;
+
+		    DefaultFontMapper mapper = new DefaultFontMapper();
+		    mapper.insertDirectory(FONTDIR);
+		    String fontname = getFontName();
+		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters(fontname);
+		    if (pp != null)
+		        pp.encoding = BaseFont.IDENTITY_H;
+
+		    PdfContentByte cb = writer.getDirectContent();
+			PdfTemplate tpl = cb.createTemplate(width, height);
+			Graphics2D g2d = new PdfGraphics2D(tpl, width, height, mapper);
+			Rectangle2D r2d = new Rectangle2D.Double(0, 0, width, height);
+
+			DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+			for (Bar bar : bars)
+				if (bar != null)
+					dataset.setValue(bar.getValue(), bar.getCategory(), bar.getName());
+
+		    JFreeChart chart = ChartFactory.createStackedBarChart(title, cattitle, valtitle, dataset, PlotOrientation.HORIZONTAL, legend, true, false);
+            java.awt.Font font = new java.awt.Font(fontname, java.awt.Font.PLAIN, 12);
+            chart.getTitle().setFont(font);
+            CategoryPlot plot = (CategoryPlot)chart.getPlot();
+            plot.setBackgroundPaint(new java.awt.Color(230, 230, 250));
+            plot.setOutlineVisible(false);
+            java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 10);
+            plot.getDomainAxis().setTickLabelFont(sfont);
+            plot.getRangeAxis().setTickLabelsVisible(false);
+
+            if (legend)
+            	chart.getLegend().setItemFont(sfont);
+
+            BarRenderer renderer = (BarRenderer)plot.getRenderer();
+            renderer.setBarPainter(new StandardBarPainter());
+			chart.draw(g2d, r2d);
+			g2d.dispose();
+			return Image.getInstance(tpl);
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }
