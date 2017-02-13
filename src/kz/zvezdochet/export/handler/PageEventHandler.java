@@ -73,11 +73,11 @@ public class PageEventHandler implements PdfPageEvent {
 			BaseFont baseFont = PDFUtil.getBaseFont();
 			PdfContentByte cb = writer.getDirectContent();
 			Font fonth = new Font(baseFont, 10, Font.NORMAL, new BaseColor(153, 153, 153));
-			float y = (doc.right() - doc.left()) / 2 + doc.leftMargin();
+			float x = (doc.right() - doc.left()) / 2 + doc.leftMargin();
 	        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase("Астрологический сервис Звездочёт", fonth),
-	        	y, doc.top() + 10, 0);
+	        	x, doc.top() + 10, 0);
 	        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase(String.valueOf(writer.getPageNumber()), fonth),
-	        	y, doc.bottom() + 10, 0);
+	        	x, doc.bottom() - 10, 0);
 		} catch (DocumentException e) {
 			e.printStackTrace();
 		} catch (IOException e) {

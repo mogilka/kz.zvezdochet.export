@@ -1,5 +1,10 @@
 * { font-family: Ubuntu }
 
+h5 {
+	font-size: 100%;
+	margin: 20px 0;
+}
+
 table {
 	border-collapse: collapse;
 	font-size: 85.7%;
@@ -16,3 +21,10 @@ th {
 }
 
 ul { margin: 20px 0 }
+
+blockquote {
+	font-weight: italic;
+	margin: 20px;
+}
+blockquote:before { content: '«'; }
+blockquote:after { content: '»'; }

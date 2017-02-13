@@ -69,6 +69,15 @@ public class PDFUtil {
 	 * Поиск каталога размещения шрифтов
 	 */
 	public static String FONTFILE = "Ubuntu-R.ttf";
+	/**
+	 * Цвет ссылок и заголовков
+	 */
+	public static BaseColor FONTCOLOR = new BaseColor(102, 102, 153);
+	/**
+	 * Цвет примечаний
+	 */
+	public static BaseColor FONTCOLORGRAY = new BaseColor(102, 102, 102);
+
 
 	/**
 	 * Отображение информации о копирайте
@@ -79,13 +88,13 @@ public class PDFUtil {
         Paragraph p = new Paragraph();
 		try {
 			Font font = new Font(baseFont, 10, Font.NORMAL);
-			Font fonta = new Font(baseFont, 10, Font.UNDERLINE, new BaseColor(102, 102, 153));
+			Font fonta = new Font(baseFont, 10, Font.UNDERLINE, FONTCOLOR);
 
 	        p.setAlignment(Element.ALIGN_CENTER);
 	        Chunk chunk = new Chunk("© 1998-" + Calendar.getInstance().get(Calendar.YEAR) + " Астрологический сервис ", font);
 	        p.add(chunk);
 	        chunk = new Chunk("Звездочёт", fonta);
-	        chunk.setAnchor("https://zvezdochet.guru");
+	        chunk.setAnchor(WEBSITE);
 	        p.add(chunk);
 		} catch (Exception e) {
 		    e.printStackTrace();
@@ -118,7 +127,7 @@ public class PDFUtil {
 	 * @return Font шрифт
 	 */
 	public static Font getLinkFont(BaseFont baseFont) {
-		return new Font(baseFont, 12, Font.UNDERLINE, new BaseColor(102, 102, 153));
+		return new Font(baseFont, 12, Font.UNDERLINE, FONTCOLOR);
 	}
 
 	/**
@@ -127,8 +136,11 @@ public class PDFUtil {
 	 * @return Font шрифт
 	 */
 	public static Font getHeaderFont(BaseFont baseFont) {
-		return new Font(baseFont, 14, Font.BOLD, new BaseColor(102, 102, 153));
+		return new Font(baseFont, 14, Font.BOLD, FONTCOLOR);
 	}
+
+	public static String AUTHOR = "Наталья Диденко";
+	public static String WEBSITE = "https://zvezdochet.guru";
 
 	/**
 	 * Поиск метаданных по умолчанию
@@ -139,8 +151,8 @@ public class PDFUtil {
         doc.addTitle(title);
         doc.addSubject("Астрологический сервис Звездочёт");
         doc.addKeywords("гороскоп, звездочёт, сидерическая астрология");
-        doc.addAuthor("Наталья Диденко");
-        doc.addCreator("Наталья Диденко");
+        doc.addAuthor(AUTHOR);
+        doc.addCreator(AUTHOR);
         doc.addCreationDate();
 	}
 
@@ -153,19 +165,10 @@ public class PDFUtil {
      */
 	public static void printHeader(Paragraph p, String text, BaseFont baseFont) {
 		try {
-			Font fonth3w = new Font(baseFont, 10, Font.BOLD, new BaseColor(255, 255, 255));
-
-            PdfPTable table = new PdfPTable(1);
-            table.setWidthPercentage(100);
-            table.setSpacingBefore(1);
-
-            PdfPCell cell = new PdfPCell(new Phrase(text, fonth3w));
-            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-            cell.setBackgroundColor(new BaseColor(153, 153, 204));
-            cell.setBorder(PdfPCell.NO_BORDER);
-            cell.setPadding(5);
-            table.addCell(cell);
-            p.add(table);
+			Font font = new Font(baseFont, 18, Font.BOLD, new BaseColor(51, 51, 102));
+	        p.setAlignment(Element.ALIGN_CENTER);
+			p.add(new Phrase(text, font));
+			p.add(Chunk.NEWLINE);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -179,7 +182,7 @@ public class PDFUtil {
 	 * @return секция
 	 */
 	public static Section printSection(Chapter chapter, String title, BaseFont baseFont) {
-		Font fonth3 = new Font(baseFont, 16, Font.BOLD, new BaseColor(102, 102, 153));
+		Font fonth3 = new Font(baseFont, 16, Font.BOLD, FONTCOLOR);
 		Paragraph p = new Paragraph(title, fonth3);
 		p.setSpacingBefore(10);
 		p.add(Chunk.NEWLINE);
@@ -192,7 +195,7 @@ public class PDFUtil {
 	 * @param p абзац
 	 */
 	private static void printHr(Paragraph p) {
-		p.add(new Chunk(new LineSeparator(2, 100, new BaseColor(102, 102, 153), Element.ALIGN_CENTER, 0)));	
+		p.add(new Chunk(new LineSeparator(2, 100, FONTCOLOR, Element.ALIGN_CENTER, 0)));	
 	}
 
 	/**
@@ -417,6 +420,12 @@ public class PDFUtil {
 	public static Phrase html2pdf(String html) {
 	    Phrase phrase = new Phrase();
 		try {
+			//преобразуем html-абзацы в html-блоки
+			//чтобы pdf-абзацы выглядели раздельно, а не слитно.
+			//если этого не сделать, абзацы будут выполнять роль span, а не p
+			html = html.replace("<p>", "<div>")
+				.replace("</p>", "</div>");
+
 			InputStream is = new ByteArrayInputStream(html.getBytes("UTF-8"));
 			FileInputStream fis = new FileInputStream(PlatformUtil.getPath(kz.zvezdochet.export.Activator.PLUGIN_ID, "/export.css").getPath());
 		    HtmlPipelineContext htmlContext = new HtmlPipelineContext(null);
