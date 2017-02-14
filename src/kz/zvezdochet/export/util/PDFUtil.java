@@ -15,10 +15,12 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PiePlot;
 import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
+import org.jfree.data.xy.XYSeriesCollection;
 
 import com.itextpdf.awt.DefaultFontMapper;
 import com.itextpdf.awt.PdfGraphics2D;
@@ -206,9 +208,9 @@ public class PDFUtil {
 	public static BaseColor htmlColor2Base(String htmlColor) {
 		BaseColor color = BaseColor.BLACK;
 		if (htmlColor.equals("maroon"))
-			color = BaseColor.RED;
+			color = new BaseColor(102, 0, 51);
 		else if (htmlColor.equals("teal"))
-			color = BaseColor.GREEN;
+			color = new BaseColor(0, 102, 102);
 		else if (htmlColor.equals("purple"))
 			color = BaseColor.MAGENTA;
 		else if (htmlColor.equals("navy"))
@@ -301,7 +303,7 @@ public class PDFUtil {
 	}
 
 	/**
-	 * Генерация диаграмм
+	 * Генерация столбцовых диаграмм
 	 * @param writer обработчик генерации PDF-файла
 	 * @param title заголовок диаграммы
 	 * @param cattitle заголовок категории
@@ -312,7 +314,7 @@ public class PDFUtil {
 	 * @param legend true|false присутствие|отсутствие легенды
 	 * @return изображение диаграммы
 	 */
-	public static Image printChart(PdfWriter writer, String title, String cattitle, String valtitle, Bar[] bars, float width, float height, boolean legend) {
+	public static Image printBars(PdfWriter writer, String title, String cattitle, String valtitle, Bar[] bars, float width, float height, boolean legend) {
 		try {
 	        if (0 == width)
 	        	width = 320;
@@ -500,6 +502,62 @@ public class PDFUtil {
 
             BarRenderer renderer = (BarRenderer)plot.getRenderer();
             renderer.setBarPainter(new StandardBarPainter());
+			chart.draw(g2d, r2d);
+			g2d.dispose();
+			return Image.getInstance(tpl);
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * Генерация линейных диаграмм
+	 * @param writer обработчик генерации PDF-файла
+	 * @param title заголовок диаграммы
+	 * @param cattitle заголовок категории
+	 * @param valtitle заголовок значения
+	 * @param bars массив значений
+	 * @param width ширина диаграммы
+	 * @param height высота диаграммы
+	 * @param legend true|false присутствие|отсутствие легенды
+	 * @return изображение диаграммы
+	 */
+	public static Image printGraphics(PdfWriter writer, String title, String cattitle, String valtitle, XYSeriesCollection dataset, float width, float height, boolean legend) {
+		try {
+	        if (0 == width)
+	        	width = 320;
+	        if (0 == height)
+	        	height = 240;
+
+		    DefaultFontMapper mapper = new DefaultFontMapper();
+		    mapper.insertDirectory(FONTDIR);
+		    String fontname = getFontName();
+		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters(fontname);
+		    if (pp != null)
+		        pp.encoding = BaseFont.IDENTITY_H;
+
+		    PdfContentByte cb = writer.getDirectContent();
+			PdfTemplate tpl = cb.createTemplate(width, height);
+			Graphics2D g2d = new PdfGraphics2D(tpl, width, height, mapper);
+			Rectangle2D r2d = new Rectangle2D.Double(0, 0, width, height);
+
+		    JFreeChart chart = ChartFactory.createXYLineChart(title, cattitle, valtitle, dataset, PlotOrientation.VERTICAL, legend, true, false);
+            java.awt.Font font = new java.awt.Font(fontname, java.awt.Font.PLAIN, 12);
+            chart.getTitle().setFont(font);
+            XYPlot plot = (XYPlot)chart.getPlot();
+            plot.setBackgroundPaint(new java.awt.Color(230, 230, 250));
+            java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 10);
+            plot.getDomainAxis().setLabelFont(sfont);
+            plot.getRangeAxis().setLabelFont(sfont);
+
+            if (legend)
+            	chart.getLegend().setItemFont(sfont);
+            else
+            	chart.getLegend().setVisible(false);
+
+//            BarRenderer renderer = (BarRenderer)plot.getRenderer();
+//            renderer.setBarPainter(new StandardBarPainter());
 			chart.draw(g2d, r2d);
 			g2d.dispose();
 			return Image.getInstance(tpl);
