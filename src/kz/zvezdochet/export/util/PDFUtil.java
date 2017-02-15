@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Calendar;
+import java.util.List;
 
 import org.eclipse.swt.graphics.Color;
 import org.jfree.chart.ChartFactory;
@@ -54,7 +55,10 @@ import com.itextpdf.tool.xml.pipeline.end.ElementHandlerPipeline;
 import com.itextpdf.tool.xml.pipeline.html.HtmlPipeline;
 import com.itextpdf.tool.xml.pipeline.html.HtmlPipelineContext;
 
+import kz.zvezdochet.core.bean.ITextGender;
+import kz.zvezdochet.core.bean.TextGender;
 import kz.zvezdochet.core.util.PlatformUtil;
+import kz.zvezdochet.core.util.StringUtil;
 import kz.zvezdochet.export.bean.Bar;
 
 /**
@@ -86,9 +90,10 @@ public class PDFUtil {
 	 * @param baseFont базовый шрифт
 	 * @return Paragraph абзац
 	 */
-	public static Paragraph printCopyright(BaseFont baseFont) {
+	public static Paragraph printCopyright() {
         Paragraph p = new Paragraph();
 		try {
+			BaseFont baseFont = getBaseFont();
 			Font font = new Font(baseFont, 10, Font.NORMAL);
 			Font fonta = new Font(baseFont, 10, Font.UNDERLINE, FONTCOLOR);
 
@@ -118,8 +123,11 @@ public class PDFUtil {
 	 * Поиск шрифта для обычного текста
 	 * @param baseFont базовый шрифт
 	 * @return Font шрифт
+	 * @throws IOException 
+	 * @throws DocumentException 
 	 */
-	public static Font getRegularFont(BaseFont baseFont) {
+	public static Font getRegularFont() throws DocumentException, IOException {
+		BaseFont baseFont = getBaseFont();
 		return new Font(baseFont, 12, Font.NORMAL);
 	}
 
@@ -127,8 +135,11 @@ public class PDFUtil {
 	 * Поиск шрифта для гиперссылки
 	 * @param baseFont базовый шрифт
 	 * @return Font шрифт
+	 * @throws IOException 
+	 * @throws DocumentException 
 	 */
-	public static Font getLinkFont(BaseFont baseFont) {
+	public static Font getLinkFont() throws DocumentException, IOException {
+		BaseFont baseFont = getBaseFont();
 		return new Font(baseFont, 12, Font.UNDERLINE, FONTCOLOR);
 	}
 
@@ -136,8 +147,11 @@ public class PDFUtil {
 	 * Поиск шрифта для подзаголовка
 	 * @param baseFont базовый шрифт
 	 * @return Font шрифт
+	 * @throws IOException 
+	 * @throws DocumentException 
 	 */
-	public static Font getHeaderFont(BaseFont baseFont) {
+	public static Font getHeaderFont() throws DocumentException, IOException {
+		BaseFont baseFont = getBaseFont();
 		return new Font(baseFont, 14, Font.BOLD, FONTCOLOR);
 	}
 
@@ -165,8 +179,9 @@ public class PDFUtil {
      * @param baseFont базовый шрифт
      * http://developers.itextpdf.com/examples/itext-action-second-edition/chapter-5#225-moviecountries1.java
      */
-	public static void printHeader(Paragraph p, String text, BaseFont baseFont) {
+	public static void printHeader(Paragraph p, String text) {
 		try {
+			BaseFont baseFont = getBaseFont();
 			Font font = new Font(baseFont, 18, Font.BOLD, new BaseColor(51, 51, 102));
 	        p.setAlignment(Element.ALIGN_CENTER);
 			p.add(new Phrase(text, font));
@@ -182,8 +197,11 @@ public class PDFUtil {
 	 * @param title наименование секции
 	 * @param baseFont базовый шрифт
 	 * @return секция
+	 * @throws IOException 
+	 * @throws DocumentException 
 	 */
-	public static Section printSection(Chapter chapter, String title, BaseFont baseFont) {
+	public static Section printSection(Chapter chapter, String title) throws DocumentException, IOException {
+		BaseFont baseFont = getBaseFont();
 		Font fonth3 = new Font(baseFont, 16, Font.BOLD, FONTCOLOR);
 		Paragraph p = new Paragraph(title, fonth3);
 		p.setSpacingBefore(10);
@@ -371,7 +389,7 @@ public class PDFUtil {
 	 * @param baseFont базовый шрифт
 	 * @return табличная диаграмма
 	 */
-	public static PdfPTable printTableChart(PdfWriter writer, double maxval, Bar[] bars, String title, BaseFont baseFont) {
+	public static PdfPTable printTableChart(PdfWriter writer, double maxval, Bar[] bars, String title) {
         PdfPTable table = new PdfPTable(3);
         float height = 20;
         float factor = 14;
@@ -380,6 +398,7 @@ public class PDFUtil {
 	        table.setWidths(new float[] { maxvalue, 20, 120 });
 	        table.setSpacingBefore(10);
 	        table.setSummary(title);
+			BaseFont baseFont = getBaseFont();
 	        Font font = new Font(baseFont, 12, Font.NORMAL, BaseColor.BLACK);
 			for (Bar bar : bars) {
 				double val = bar.getValue();
@@ -442,7 +461,7 @@ public class PDFUtil {
 			XMLWorker worker = new XMLWorker(css, true);
 		    XMLParser p = new XMLParser(worker);
 		    p.parse(is, Charset.forName("UTF-8"));
-		    phrase.setFont(getRegularFont(getBaseFont()));
+		    phrase.setFont(getRegularFont());
 		    phrase.addAll(elements);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -536,7 +555,7 @@ public class PDFUtil {
 		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters(fontname);
 		    if (pp != null)
 		        pp.encoding = BaseFont.IDENTITY_H;
-
+		    
 		    PdfContentByte cb = writer.getDirectContent();
 			PdfTemplate tpl = cb.createTemplate(width, height);
 			Graphics2D g2d = new PdfGraphics2D(tpl, width, height, mapper);
@@ -565,5 +584,25 @@ public class PDFUtil {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	/**
+	 * Генерация гендерного толкования
+	 * @param section подраздел
+	 * @param dict справочник
+	 * @throws IOException 
+	 * @throws DocumentException 
+	 */
+	public static void printGender(Section section, ITextGender dict, boolean female, boolean child) throws DocumentException, IOException {
+		if (dict != null) {
+			List<TextGender> genders = dict.getGenderTexts(female, child);
+			for (TextGender gender : genders) {
+				Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType()), getHeaderFont());
+				p.setSpacingBefore(10);
+				section.add(p);
+				section.add(new Paragraph(StringUtil.removeTags(gender.getText()), getRegularFont()));
+			};
+			section.add(Chunk.NEWLINE);
+		}
 	}
 }
