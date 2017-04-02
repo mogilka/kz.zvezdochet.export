@@ -1,5 +1,6 @@
 package kz.zvezdochet.export.util;
 
+import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
 import java.io.ByteArrayInputStream;
@@ -7,20 +8,24 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 
 import org.eclipse.swt.graphics.Color;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PiePlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.category.StandardBarPainter;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
+import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.xy.XYSeriesCollection;
 
 import com.itextpdf.awt.DefaultFontMapper;
@@ -59,6 +64,7 @@ import kz.zvezdochet.core.bean.ITextGender;
 import kz.zvezdochet.core.bean.TextGender;
 import kz.zvezdochet.core.util.PlatformUtil;
 import kz.zvezdochet.core.util.StringUtil;
+import kz.zvezdochet.export.Activator;
 import kz.zvezdochet.export.bean.Bar;
 
 /**
@@ -68,15 +74,24 @@ import kz.zvezdochet.export.bean.Bar;
  */
 public class PDFUtil {
 	/**
-	 * Поиск каталога размещения шрифтов
+	 * Каталог размещения обычных шрифтов
 	 */
 	public static String FONTDIR = "/usr/share/fonts/truetype/ubuntu-font-family";
 	/**
-	 * Поиск каталога размещения шрифтов
+	 * Наименование обычного шрифта
 	 */
 	public static String FONTFILE = "Ubuntu-R.ttf";
 	/**
-	 * Цвет ссылок и заголовков
+	 * Наименование символьного шрифта
+	 */
+	public static String FONTSYMBOLFILE = "Cardo-Regular.ttf";
+
+	/**
+	 * Цвет заголовков
+	 */
+	public static BaseColor FONTCOLORH = new BaseColor(51, 51, 102);
+	/**
+	 * Цвет ссылок и подзаголовков
 	 */
 	public static BaseColor FONTCOLOR = new BaseColor(102, 102, 153);
 	/**
@@ -182,7 +197,7 @@ public class PDFUtil {
 	public static void printHeader(Paragraph p, String text) {
 		try {
 			BaseFont baseFont = getBaseFont();
-			Font font = new Font(baseFont, 18, Font.BOLD, new BaseColor(51, 51, 102));
+			Font font = new Font(baseFont, 18, Font.BOLD, FONTCOLORH);
 	        p.setAlignment(Element.ALIGN_CENTER);
 			p.add(new Phrase(text, font));
 			p.add(Chunk.NEWLINE);
@@ -202,7 +217,7 @@ public class PDFUtil {
 	 */
 	public static Section printSection(Chapter chapter, String title) throws DocumentException, IOException {
 		BaseFont baseFont = getBaseFont();
-		Font fonth3 = new Font(baseFont, 16, Font.BOLD, FONTCOLOR);
+		Font fonth3 = new Font(baseFont, 16, Font.BOLD, FONTCOLORH);
 		Paragraph p = new Paragraph(title, fonth3);
 		p.setSpacingBefore(10);
 		p.add(Chunk.NEWLINE);
@@ -215,7 +230,7 @@ public class PDFUtil {
 	 * @param p абзац
 	 */
 	private static void printHr(Paragraph p) {
-		p.add(new Chunk(new LineSeparator(2, 100, FONTCOLOR, Element.ALIGN_CENTER, 0)));	
+		p.add(new Chunk(new LineSeparator(2, 100, FONTCOLORH, Element.ALIGN_CENTER, 0)));	
 	}
 
 	/**
@@ -230,9 +245,9 @@ public class PDFUtil {
 		else if (htmlColor.equals("teal"))
 			color = new BaseColor(0, 102, 102);
 		else if (htmlColor.equals("purple"))
-			color = BaseColor.MAGENTA;
+			color = new BaseColor(204, 102, 51);
 		else if (htmlColor.equals("navy"))
-			color = BaseColor.BLUE;
+			color = new BaseColor(0, 51, 102);
 		return color;
 	}
 
@@ -253,11 +268,19 @@ public class PDFUtil {
 	}
 
 	/**
-	 * Возвращает наименование используемого шрифта
+	 * Возвращает наименование обычного шрифта
 	 * @return наименование шрифта
 	 */
 	public static String getFontName() {
 		return "Ubuntu";
+	}
+
+	/**
+	 * Возвращает наименование символьного шрифта
+	 * @return наименование шрифта
+	 */
+	public static String getFontSymbolName() {
+		return "Cardo-Regular";
 	}
 
 	/**
@@ -330,9 +353,11 @@ public class PDFUtil {
 	 * @param width ширина диаграммы
 	 * @param height высота диаграммы
 	 * @param legend true|false присутствие|отсутствие легенды
+	 * @param symbols true|false символы|буквы
 	 * @return изображение диаграммы
 	 */
-	public static Image printBars(PdfWriter writer, String title, String cattitle, String valtitle, Bar[] bars, float width, float height, boolean legend) {
+	public static Image printBars(PdfWriter writer, String title, String cattitle, String valtitle, Bar[] bars, 
+			float width, float height, boolean legend, boolean symbols) {
 		try {
 	        if (0 == width)
 	        	width = 320;
@@ -340,8 +365,8 @@ public class PDFUtil {
 	        	height = 240;
 
 		    DefaultFontMapper mapper = new DefaultFontMapper();
-		    mapper.insertDirectory(FONTDIR);
-		    String fontname = getFontName();
+		    mapper.insertDirectory(symbols ? PlatformUtil.getPath(Activator.PLUGIN_ID, "/font").getPath() : FONTDIR);
+		    String fontname = symbols ? getFontSymbolName() : getFontName();
 		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters(fontname);
 		    if (pp != null)
 		        pp.encoding = BaseFont.IDENTITY_H;
@@ -604,5 +629,92 @@ public class PDFUtil {
 			};
 			section.add(Chunk.NEWLINE);
 		}
+	}
+
+	/**
+	 * Генерация временных диаграмм
+	 * @param writer обработчик генерации PDF-файла
+	 * @param title заголовок диаграммы
+	 * @param cattitle заголовок категории
+	 * @param valtitle заголовок значения
+	 * @param bars массив значений
+	 * @param width ширина диаграммы
+	 * @param height высота диаграммы
+	 * @param legend true|false присутствие|отсутствие легенды
+	 * @return изображение диаграммы
+	 */
+	public static Image printTimeChart(PdfWriter writer, String title, String cattitle, String valtitle, TimeSeriesCollection dataset, float width, float height, boolean legend) {
+		try {
+	        if (0 == width)
+	        	width = 320;
+	        if (0 == height)
+	        	height = 240;
+
+		    DefaultFontMapper mapper = new DefaultFontMapper();
+		    mapper.insertDirectory(FONTDIR);
+		    String fontname = getFontName();
+		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters(fontname);
+		    if (pp != null)
+		        pp.encoding = BaseFont.IDENTITY_H;
+		    
+		    PdfContentByte cb = writer.getDirectContent();
+			PdfTemplate tpl = cb.createTemplate(width, height);
+			Graphics2D g2d = new PdfGraphics2D(tpl, width, height, mapper);
+			Rectangle2D r2d = new Rectangle2D.Double(0, 0, width, height);
+
+		    JFreeChart chart = ChartFactory.createTimeSeriesChart(title, cattitle, valtitle, dataset, legend, true, false);
+            java.awt.Font font = new java.awt.Font(fontname, java.awt.Font.PLAIN, 12);
+            chart.getTitle().setFont(font);
+            XYPlot plot = (XYPlot)chart.getPlot();
+            plot.setBackgroundPaint(new java.awt.Color(230, 230, 250));
+            java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 10);
+            plot.getDomainAxis().setLabelFont(sfont);
+            plot.getRangeAxis().setLabelFont(sfont);
+
+            if (legend)
+            	chart.getLegend().setItemFont(sfont);
+            else
+            	chart.getLegend().setVisible(false);
+
+            DateAxis axis = (DateAxis)plot.getDomainAxis();
+            axis.setDateFormatOverride(new SimpleDateFormat("dd.MM"));
+            axis.setAutoTickUnitSelection(false);
+            axis.setVerticalTickLabels(true);
+
+            final XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer)plot.getRenderer();
+            int scnt = dataset.getSeries().size();
+            for (int i = 0; i < scnt; i++)
+            	renderer.setSeriesStroke(i, new BasicStroke(3));
+
+			chart.draw(g2d, r2d);
+			g2d.dispose();
+			return Image.getInstance(tpl);
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * Поиск базового шрифта для спецсимволов
+	 * @return BaseFont базовый шрифт
+	 * @throws DocumentException
+	 * @throws IOException
+	 */
+	public static BaseFont getSymbolFont() throws DocumentException, IOException {
+		String filename = PlatformUtil.getPath(Activator.PLUGIN_ID, "/font/Cardo-Regular.ttf").getPath();
+		return BaseFont.createFont(filename, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+	}
+
+	/**
+	 * Поиск шрифта для подзаголовка
+	 * @param baseFont базовый шрифт
+	 * @return Font шрифт
+	 * @throws IOException 
+	 * @throws DocumentException 
+	 */
+	public static Font getHeaderSymbolFont() throws DocumentException, IOException {
+		BaseFont baseFont = getSymbolFont();
+		return new Font(baseFont, 14, Font.NORMAL, FONTCOLOR);
 	}
 }
