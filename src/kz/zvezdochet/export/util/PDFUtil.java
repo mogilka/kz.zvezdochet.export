@@ -76,11 +76,12 @@ public class PDFUtil {
 	/**
 	 * Каталог размещения обычных шрифтов
 	 */
-	public static String FONTDIR = "/usr/share/fonts/truetype/ubuntu-font-family";
+	public static String FONTDIR = "/usr/share/fonts/truetype/freefont";
+
 	/**
 	 * Наименование обычного шрифта
 	 */
-	public static String FONTFILE = "Ubuntu-R.ttf";
+	public static String FONTFILE = "FreeSans.ttf";
 	/**
 	 * Наименование символьного шрифта
 	 */
@@ -210,7 +211,6 @@ public class PDFUtil {
 	 * Печать секции
 	 * @param chapter раздел документа
 	 * @param title наименование секции
-	 * @param baseFont базовый шрифт
 	 * @return секция
 	 * @throws IOException 
 	 * @throws DocumentException 
@@ -263,6 +263,8 @@ public class PDFUtil {
 	    	return "Женщина";
 	    else if (type.equals("child"))
 	    	return "Ребёнок";
+	    else if (type.equals("health"))
+	    	return "Здоровье";
 	    else
 	    	return "";
 	}
@@ -272,7 +274,7 @@ public class PDFUtil {
 	 * @return наименование шрифта
 	 */
 	public static String getFontName() {
-		return "Ubuntu";
+		return "FreeSans";
 	}
 
 	/**
@@ -353,11 +355,11 @@ public class PDFUtil {
 	 * @param width ширина диаграммы
 	 * @param height высота диаграммы
 	 * @param legend true|false присутствие|отсутствие легенды
-	 * @param symbols true|false символы|буквы
+	 * @param vertical true|false вертикальная|горизонтальная диаграмма
 	 * @return изображение диаграммы
 	 */
 	public static Image printBars(PdfWriter writer, String title, String cattitle, String valtitle, Bar[] bars, 
-			float width, float height, boolean legend, boolean symbols) {
+			float width, float height, boolean legend, boolean vertical) {
 		try {
 	        if (0 == width)
 	        	width = 320;
@@ -365,8 +367,8 @@ public class PDFUtil {
 	        	height = 240;
 
 		    DefaultFontMapper mapper = new DefaultFontMapper();
-		    mapper.insertDirectory(symbols ? PlatformUtil.getPath(Activator.PLUGIN_ID, "/font").getPath() : FONTDIR);
-		    String fontname = symbols ? getFontSymbolName() : getFontName();
+		    mapper.insertDirectory(FONTDIR);
+		    String fontname = getFontName();
 		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters(fontname);
 		    if (pp != null)
 		        pp.encoding = BaseFont.IDENTITY_H;
@@ -380,7 +382,8 @@ public class PDFUtil {
 			for (Bar bar : bars)
 				dataset.setValue(bar.getValue(), bar.getCategory(), bar.getName());
 
-		    JFreeChart chart = ChartFactory.createBarChart(title, cattitle, valtitle, dataset);
+			PlotOrientation orientation = vertical ? PlotOrientation.VERTICAL : PlotOrientation.HORIZONTAL;
+		    JFreeChart chart = ChartFactory.createBarChart(title, cattitle, valtitle, dataset, orientation, legend, true, false);
             java.awt.Font font = new java.awt.Font(fontname, java.awt.Font.PLAIN, 12);
             chart.getTitle().setFont(font);
             CategoryPlot plot = (CategoryPlot)chart.getPlot();
@@ -391,8 +394,6 @@ public class PDFUtil {
 
             if (legend)
             	chart.getLegend().setItemFont(sfont);
-            else
-            	chart.getLegend().setVisible(false);
 
             BarRenderer renderer = (BarRenderer)plot.getRenderer();
             renderer.setBarPainter(new StandardBarPainter());
@@ -489,6 +490,7 @@ public class PDFUtil {
 		    phrase.setFont(getRegularFont());
 		    phrase.addAll(elements);
 		} catch (Exception e) {
+			System.out.println(html);
 			e.printStackTrace();
 		}
 		return phrase;
@@ -589,6 +591,7 @@ public class PDFUtil {
 		    JFreeChart chart = ChartFactory.createXYLineChart(title, cattitle, valtitle, dataset, PlotOrientation.VERTICAL, legend, true, false);
             java.awt.Font font = new java.awt.Font(fontname, java.awt.Font.PLAIN, 12);
             chart.getTitle().setFont(font);
+
             XYPlot plot = (XYPlot)chart.getPlot();
             plot.setBackgroundPaint(new java.awt.Color(230, 230, 250));
             java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 10);
@@ -696,12 +699,12 @@ public class PDFUtil {
 	}
 
 	/**
-	 * Поиск базового шрифта для спецсимволов
+	 * Поиск базового шрифта для астрологических символов
 	 * @return BaseFont базовый шрифт
 	 * @throws DocumentException
 	 * @throws IOException
 	 */
-	public static BaseFont getSymbolFont() throws DocumentException, IOException {
+	public static BaseFont getAstroFont() throws DocumentException, IOException {
 		String filename = PlatformUtil.getPath(Activator.PLUGIN_ID, "/font/Cardo-Regular.ttf").getPath();
 		return BaseFont.createFont(filename, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
 	}
@@ -713,8 +716,18 @@ public class PDFUtil {
 	 * @throws IOException 
 	 * @throws DocumentException 
 	 */
-	public static Font getHeaderSymbolFont() throws DocumentException, IOException {
-		BaseFont baseFont = getSymbolFont();
+	public static Font getHeaderAstroFont() throws DocumentException, IOException {
+		BaseFont baseFont = getAstroFont();
 		return new Font(baseFont, 14, Font.NORMAL, FONTCOLOR);
+	}
+
+	/**
+	 * Поиск базового шрифта для спецсимволов
+	 * @return BaseFont базовый шрифт
+	 * @throws DocumentException
+	 * @throws IOException
+	 */
+	public static Font getHeaderSymbolFont() throws DocumentException, IOException {
+		return new Font(Font.getFamily(BaseFont.SYMBOL), 14, Font.NORMAL, FONTCOLOR);
 	}
 }

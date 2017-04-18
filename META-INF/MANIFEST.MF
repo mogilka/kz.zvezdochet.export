@@ -38,6 +38,7 @@ Export-Package: com.itextpdf.awt,
  org.jfree.chart.title,
  org.jfree.data.category,
  org.jfree.data.general,
+ org.jfree.data.time,
  org.jfree.data.xy,
  org.jfree.util
 Bundle-ClassPath: lib/html-gen.jar,
