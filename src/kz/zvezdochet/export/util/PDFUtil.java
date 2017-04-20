@@ -568,6 +568,7 @@ public class PDFUtil {
 	 * @param height высота диаграммы
 	 * @param legend true|false присутствие|отсутствие легенды
 	 * @return изображение диаграммы
+	 * @link http://www.codejava.net/java-se/graphics/using-jfreechart-to-draw-xy-line-chart-with-xydataset
 	 */
 	public static Image printGraphics(PdfWriter writer, String title, String cattitle, String valtitle, XYSeriesCollection dataset, float width, float height, boolean legend) {
 		try {
@@ -598,13 +599,16 @@ public class PDFUtil {
             plot.getDomainAxis().setLabelFont(sfont);
             plot.getRangeAxis().setLabelFont(sfont);
 
+            XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
+            for (int i = 0; i < plot.getSeriesCount(); i++)
+            	renderer.setSeriesStroke(i, new BasicStroke(4.0f));
+            plot.setRenderer(renderer);
+
             if (legend)
             	chart.getLegend().setItemFont(sfont);
             else
             	chart.getLegend().setVisible(false);
 
-//            BarRenderer renderer = (BarRenderer)plot.getRenderer();
-//            renderer.setBarPainter(new StandardBarPainter());
 			chart.draw(g2d, r2d);
 			g2d.dispose();
 			return Image.getInstance(tpl);
