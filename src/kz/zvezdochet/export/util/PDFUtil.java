@@ -88,13 +88,17 @@ public class PDFUtil {
 	public static String FONTSYMBOLFILE = "Cardo-Regular.ttf";
 
 	/**
-	 * Цвет заголовков
+	 * Цвет разделов
 	 */
 	public static BaseColor FONTCOLORH = new BaseColor(51, 51, 102);
 	/**
-	 * Цвет ссылок и подзаголовков
+	 * Цвет ссылок и заголовков
 	 */
 	public static BaseColor FONTCOLOR = new BaseColor(102, 102, 153);
+	/**
+	 * Цвет подзаголовков
+	 */
+	public static BaseColor FONTCOLORSUBH = new BaseColor(153, 153, 204);
 	/**
 	 * Цвет примечаний
 	 */
@@ -160,7 +164,7 @@ public class PDFUtil {
 	}
 
 	/**
-	 * Поиск шрифта для подзаголовка
+	 * Поиск шрифта для заголовка
 	 * @param baseFont базовый шрифт
 	 * @return Font шрифт
 	 * @throws IOException 
@@ -629,7 +633,7 @@ public class PDFUtil {
 		if (dict != null) {
 			List<TextGender> genders = dict.getGenderTexts(female, child);
 			for (TextGender gender : genders) {
-				Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType()), getHeaderFont());
+				Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType()), getSubheaderFont());
 				p.setSpacingBefore(10);
 				section.add(p);
 				section.add(new Paragraph(StringUtil.removeTags(gender.getText()), getRegularFont()));
@@ -733,5 +737,17 @@ public class PDFUtil {
 	 */
 	public static Font getHeaderSymbolFont() throws DocumentException, IOException {
 		return new Font(Font.getFamily(BaseFont.SYMBOL), 14, Font.NORMAL, FONTCOLOR);
+	}
+
+	/**
+	 * Поиск шрифта для подзаголовка
+	 * @param baseFont базовый шрифт
+	 * @return Font шрифт
+	 * @throws IOException 
+	 * @throws DocumentException 
+	 */
+	public static Font getSubheaderFont() throws DocumentException, IOException {
+		BaseFont baseFont = getBaseFont();
+		return new Font(baseFont, 12, Font.BOLD, FONTCOLOR);
 	}
 }
