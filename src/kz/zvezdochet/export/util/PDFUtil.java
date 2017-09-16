@@ -103,6 +103,10 @@ public class PDFUtil {
 	 * Цвет примечаний
 	 */
 	public static BaseColor FONTCOLORGRAY = new BaseColor(102, 102, 102);
+	/**
+	 * Цвет предупреждений
+	 */
+	public static BaseColor FONTCOLORED = new BaseColor(153, 0, 51);
 
 
 	/**
@@ -474,25 +478,27 @@ public class PDFUtil {
 			//преобразуем html-абзацы в html-блоки
 			//чтобы pdf-абзацы выглядели раздельно, а не слитно.
 			//если этого не сделать, абзацы будут выполнять роль span, а не p
-			html = html.replace("<p>", "<div>")
-				.replace("</p>", "</div>");
-
-			InputStream is = new ByteArrayInputStream(html.getBytes("UTF-8"));
-			FileInputStream fis = new FileInputStream(PlatformUtil.getPath(kz.zvezdochet.export.Activator.PLUGIN_ID, "/export.css").getPath());
-		    HtmlPipelineContext htmlContext = new HtmlPipelineContext(null);
-            htmlContext.setTagFactory(Tags.getHtmlTagProcessorFactory());
-            ElementList elements = new ElementList();
-            ElementHandlerPipeline pdf = new ElementHandlerPipeline(elements, null);
-            HtmlPipeline pipeline = new HtmlPipeline(htmlContext, pdf);
-			CSSResolver cssResolver = XMLWorkerHelper.getInstance().getDefaultCssResolver(true);
-			CssFile cssFile = XMLWorkerHelper.getCSS(fis);
-			cssResolver.addCss(cssFile);
-			CssResolverPipeline css = new CssResolverPipeline(cssResolver, pipeline);
-			XMLWorker worker = new XMLWorker(css, true);
-		    XMLParser p = new XMLParser(worker);
-		    p.parse(is, Charset.forName("UTF-8"));
-		    phrase.setFont(getRegularFont());
-		    phrase.addAll(elements);
+			if (html != null) {
+				html = html.replace("<p>", "<div>")
+					.replace("</p>", "</div>");
+	
+				InputStream is = new ByteArrayInputStream(html.getBytes("UTF-8"));
+				FileInputStream fis = new FileInputStream(PlatformUtil.getPath(kz.zvezdochet.export.Activator.PLUGIN_ID, "/export.css").getPath());
+			    HtmlPipelineContext htmlContext = new HtmlPipelineContext(null);
+	            htmlContext.setTagFactory(Tags.getHtmlTagProcessorFactory());
+	            ElementList elements = new ElementList();
+	            ElementHandlerPipeline pdf = new ElementHandlerPipeline(elements, null);
+	            HtmlPipeline pipeline = new HtmlPipeline(htmlContext, pdf);
+				CSSResolver cssResolver = XMLWorkerHelper.getInstance().getDefaultCssResolver(true);
+				CssFile cssFile = XMLWorkerHelper.getCSS(fis);
+				cssResolver.addCss(cssFile);
+				CssResolverPipeline css = new CssResolverPipeline(cssResolver, pipeline);
+				XMLWorker worker = new XMLWorker(css, true);
+			    XMLParser p = new XMLParser(worker);
+			    p.parse(is, Charset.forName("UTF-8"));
+			    phrase.setFont(getRegularFont());
+			    phrase.addAll(elements);
+			}
 		} catch (Exception e) {
 			System.out.println(html);
 			e.printStackTrace();
@@ -629,10 +635,12 @@ public class PDFUtil {
 	 * @throws IOException 
 	 * @throws DocumentException 
 	 */
-	public static void printGender(Section section, ITextGender dict, boolean female, boolean child) throws DocumentException, IOException {
+	public static void printGender(Section section, ITextGender dict, boolean female, boolean child, boolean health) throws DocumentException, IOException {
 		if (dict != null) {
 			List<TextGender> genders = dict.getGenderTexts(female, child);
 			for (TextGender gender : genders) {
+				if (!health && gender.getType().equals("health"))
+					continue;
 				Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType()), getSubheaderFont());
 				p.setSpacingBefore(10);
 				section.add(p);
@@ -749,5 +757,17 @@ public class PDFUtil {
 	public static Font getSubheaderFont() throws DocumentException, IOException {
 		BaseFont baseFont = getBaseFont();
 		return new Font(baseFont, 12, Font.BOLD, FONTCOLOR);
+	}
+
+	/**
+	 * Поиск шрифта для предупреждения
+	 * @param baseFont базовый шрифт
+	 * @return Font шрифт
+	 * @throws IOException 
+	 * @throws DocumentException 
+	 */
+	public static Font getWarningFont() throws DocumentException, IOException {
+		BaseFont baseFont = getBaseFont();
+		return new Font(baseFont, 12, Font.NORMAL, FONTCOLORED);
 	}
 }
