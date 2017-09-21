@@ -190,7 +190,7 @@ public class PDFUtil {
 	public static void getMetaData(Document doc, String title) {
         doc.addTitle(title);
         doc.addSubject("Астрологический сервис Звездочёт");
-        doc.addKeywords("гороскоп, звездочёт, сидерическая астрология");
+        doc.addKeywords("гороскоп, прогноз, звездочёт, натальная астрология, сидерическая астрология");
         doc.addAuthor(AUTHOR);
         doc.addCreator(AUTHOR);
         doc.addCreationDate();
