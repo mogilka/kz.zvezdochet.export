@@ -3,7 +3,6 @@ package kz.zvezdochet.export.util;
 import org.eclipse.swt.graphics.Color;
 
 import html.Tag;
-import kz.zvezdochet.core.bean.TextGender;
 import kz.zvezdochet.core.util.CalcUtil;
 import kz.zvezdochet.core.util.CoreUtil;
 import kz.zvezdochet.export.bean.Bar;
@@ -109,22 +108,6 @@ public class HTMLUtil {
 		td.add(name);
 		tr.add(td);
 		return tr;
-	}
-
-	/**
-	 * Создание заголовка для текста, который относится к мужчинам и женщинам
-	 * @param type тип толкования
-	 * @return тег заголовка
-	 */
-	public Tag getGenderHeader(String type) {
-		String typeh = "";
-	    if (type.equals("male"))
-	    	typeh = "Мужчина";
-	    else if (type.equals("female"))
-	    	typeh = "Женщина";
-	    else if (type.equals("child"))
-	    	typeh = "Ребёнок";
-		return getBoldTaggedString(typeh);
 	}
 
 	/**
@@ -358,18 +341,5 @@ public class HTMLUtil {
 		}
 		div.add(ul);
 		return div;
-	}
-
-	/**
-	 * Печать текста для мужчин, женщин, детей
-	 * @param gender объект текста для разных полов
-	 * @param cell тег-контейнер для вложенных тегов
-	 */
-	public void printGenderText(TextGender gender, Tag cell) {
-		if (gender != null) {
-			Tag tag = this.getGenderHeader(gender.getType());
-			cell.add(tag); //заголовок
-			cell.add(gender.getText()); //текст
-		}
 	}
 }
