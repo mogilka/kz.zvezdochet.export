@@ -273,6 +273,12 @@ public class PDFUtil {
 	    	return "Ребёнок";
 	    else if (type.equals("health"))
 	    	return "Здоровье";
+	    else if (type.equals("love"))
+	    	return "Любовь";
+	    else if (type.equals("family"))
+	    	return "Семья";
+	    else if (type.equals("deal"))
+	    	return "Сотрудничество";
 	    else
 	    	return "";
 	}
