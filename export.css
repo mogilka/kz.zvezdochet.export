@@ -28,3 +28,8 @@ blockquote {
 }
 blockquote:before { content: '«'; }
 blockquote:after { content: '»'; }
+div.epigraph {
+	float: right;
+	text-align: right;
+	width: 60%;
+}
