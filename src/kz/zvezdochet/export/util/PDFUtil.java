@@ -104,10 +104,13 @@ public class PDFUtil {
 	 */
 	public static BaseColor FONTCOLORGRAY = new BaseColor(102, 102, 102);
 	/**
-	 * Цвет предупреждений
+	 * Цвет критичных сообщений
 	 */
 	public static BaseColor FONTCOLORED = new BaseColor(153, 0, 51);
-
+	/**
+	 * Цвет предупреждений
+	 */
+	public static BaseColor FONTCOLORYELLOW = new BaseColor(255, 102, 51);
 
 	/**
 	 * Отображение информации о копирайте
@@ -203,7 +206,7 @@ public class PDFUtil {
      * @param baseFont базовый шрифт
      * http://developers.itextpdf.com/examples/itext-action-second-edition/chapter-5#225-moviecountries1.java
      */
-	public static void printHeader(Paragraph p, String text) {
+	public static Paragraph printHeader(Paragraph p, String text) {
 		try {
 			BaseFont baseFont = getBaseFont();
 			Font font = new Font(baseFont, 18, Font.BOLD, FONTCOLORH);
@@ -213,6 +216,7 @@ public class PDFUtil {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		return p;
 	}
 
 	/**
@@ -766,6 +770,18 @@ public class PDFUtil {
 	}
 
 	/**
+	 * Поиск шрифта для критичного толкования
+	 * @param baseFont базовый шрифт
+	 * @return Font шрифт
+	 * @throws IOException 
+	 * @throws DocumentException 
+	 */
+	public static Font getDangerFont() throws DocumentException, IOException {
+		BaseFont baseFont = getBaseFont();
+		return new Font(baseFont, 12, Font.NORMAL, FONTCOLORED);
+	}
+
+	/**
 	 * Поиск шрифта для предупреждения
 	 * @param baseFont базовый шрифт
 	 * @return Font шрифт
@@ -774,6 +790,6 @@ public class PDFUtil {
 	 */
 	public static Font getWarningFont() throws DocumentException, IOException {
 		BaseFont baseFont = getBaseFont();
-		return new Font(baseFont, 12, Font.NORMAL, FONTCOLORED);
+		return new Font(baseFont, 12, Font.NORMAL, FONTCOLORYELLOW);
 	}
 }
