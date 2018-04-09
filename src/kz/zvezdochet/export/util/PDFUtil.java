@@ -374,10 +374,11 @@ public class PDFUtil {
 	 * @param height высота диаграммы
 	 * @param legend true|false присутствие|отсутствие легенды
 	 * @param vertical true|false вертикальная|горизонтальная диаграмма
+	 * @param customColors true|false цвета серий брать из массива значений|цвета по умолчанию
 	 * @return изображение диаграммы
 	 */
 	public static Image printBars(PdfWriter writer, String title, String cattitle, String valtitle, Bar[] bars, 
-			float width, float height, boolean legend, boolean vertical) {
+			float width, float height, boolean legend, boolean vertical, boolean customColors) {
 		try {
 	        if (0 == width)
 	        	width = 320;
@@ -404,17 +405,27 @@ public class PDFUtil {
 		    JFreeChart chart = ChartFactory.createBarChart(title, cattitle, valtitle, dataset, orientation, legend, true, false);
             java.awt.Font font = new java.awt.Font(fontname, java.awt.Font.PLAIN, 12);
             chart.getTitle().setFont(font);
+
             CategoryPlot plot = (CategoryPlot)chart.getPlot();
             plot.setBackgroundPaint(new java.awt.Color(230, 230, 250));
             plot.setOutlineVisible(false);
+//            plot.setNoDataMessage("NO DATA!"); TODO
+
             java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 10);
             plot.getDomainAxis().setTickLabelFont(sfont);
 
             if (legend)
             	chart.getLegend().setItemFont(sfont);
 
-            BarRenderer renderer = (BarRenderer)plot.getRenderer();
-            renderer.setBarPainter(new StandardBarPainter());
+            ((BarRenderer)plot.getRenderer()).setBarPainter(new StandardBarPainter());
+            BarRenderer renderer = (BarRenderer)chart.getCategoryPlot().getRenderer();
+            if (customColors)
+				for (int i = 0; i < bars.length; i++) {
+					Bar bar = bars[i];
+					Color color = bar.getColor();
+		            renderer.setSeriesPaint(i, new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue()));
+				}
+
 			chart.draw(g2d, r2d);
 			g2d.dispose();
 			return Image.getInstance(tpl);
