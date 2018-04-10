@@ -2,7 +2,9 @@ package kz.zvezdochet.export.util;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
+import java.awt.Paint;
 import java.awt.geom.Rectangle2D;
+import java.awt.geom.RectangularShape;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -20,13 +22,16 @@ import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PiePlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.category.BarPainter;
 import org.jfree.chart.renderer.category.BarRenderer;
+import org.jfree.chart.renderer.category.CategoryItemRenderer;
 import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.ui.RectangleEdge;
 
 import com.itextpdf.awt.DefaultFontMapper;
 import com.itextpdf.awt.PdfGraphics2D;
@@ -417,14 +422,28 @@ public class PDFUtil {
             if (legend)
             	chart.getLegend().setItemFont(sfont);
 
-            ((BarRenderer)plot.getRenderer()).setBarPainter(new StandardBarPainter());
-            BarRenderer renderer = (BarRenderer)chart.getCategoryPlot().getRenderer();
-            if (customColors)
+            if (customColors) {
+            	BarRenderer.setDefaultBarPainter(new StandardBarPainter());
+            	((BarRenderer)plot.getRenderer()).setBarPainter(new BarPainter() {
+					@Override
+					public void paintBarShadow(Graphics2D arg0, BarRenderer arg1, int arg2, int arg3, RectangularShape arg4,
+							RectangleEdge arg5, boolean arg6) {}					
+					@Override
+					public void paintBar(Graphics2D arg0, BarRenderer arg1, int arg2, int arg3, RectangularShape arg4,
+							RectangleEdge arg5) {}
+				});
+
+	            Paint[] colors = new Paint[bars.length];
 				for (int i = 0; i < bars.length; i++) {
 					Bar bar = bars[i];
 					Color color = bar.getColor();
-		            renderer.setSeriesPaint(i, new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue()));
+		            colors[i] = new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue());
 				}
+	            final CategoryItemRenderer renderer = new CustomRenderer(colors);
+//	            renderer.setshDefaultShadowsVisible(false);
+	            plot.setRenderer(renderer);
+            } else
+                ((BarRenderer)plot.getRenderer()).setBarPainter(new StandardBarPainter());
 
 			chart.draw(g2d, r2d);
 			g2d.dispose();
