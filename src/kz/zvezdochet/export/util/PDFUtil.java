@@ -28,6 +28,7 @@ import org.jfree.chart.renderer.category.CategoryItemRenderer;
 import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.data.category.IntervalCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.xy.XYSeriesCollection;
@@ -119,7 +120,6 @@ public class PDFUtil {
 
 	/**
 	 * Отображение информации о копирайте
-	 * @param baseFont базовый шрифт
 	 * @return Paragraph абзац
 	 */
 	public static Paragraph printCopyright() {
@@ -143,7 +143,6 @@ public class PDFUtil {
 
 	/**
 	 * Поиск базового шрифта для кириллицы
-	 * @return BaseFont базовый шрифт
 	 * @throws DocumentException
 	 * @throws IOException
 	 */
@@ -153,7 +152,6 @@ public class PDFUtil {
 
 	/**
 	 * Поиск шрифта для обычного текста
-	 * @param baseFont базовый шрифт
 	 * @return Font шрифт
 	 * @throws IOException 
 	 * @throws DocumentException 
@@ -165,7 +163,6 @@ public class PDFUtil {
 
 	/**
 	 * Поиск шрифта для гиперссылки
-	 * @param baseFont базовый шрифт
 	 * @return Font шрифт
 	 * @throws IOException 
 	 * @throws DocumentException 
@@ -177,7 +174,6 @@ public class PDFUtil {
 
 	/**
 	 * Поиск шрифта для заголовка
-	 * @param baseFont базовый шрифт
 	 * @return Font шрифт
 	 * @throws IOException 
 	 * @throws DocumentException 
@@ -672,6 +668,9 @@ public class PDFUtil {
 	 * Генерация гендерного толкования
 	 * @param section подраздел
 	 * @param dict справочник
+	 * @param female true|false женщина|мужчина
+	 * @param child true|false ребёнок|взрослый
+	 * @param health true - использовать толкование о здоровье
 	 * @throws IOException 
 	 * @throws DocumentException 
 	 */
@@ -767,7 +766,6 @@ public class PDFUtil {
 
 	/**
 	 * Поиск шрифта для подзаголовка
-	 * @param baseFont базовый шрифт
 	 * @return Font шрифт
 	 * @throws IOException 
 	 * @throws DocumentException 
@@ -789,7 +787,6 @@ public class PDFUtil {
 
 	/**
 	 * Поиск шрифта для подзаголовка
-	 * @param baseFont базовый шрифт
 	 * @return Font шрифт
 	 * @throws IOException 
 	 * @throws DocumentException 
@@ -801,7 +798,6 @@ public class PDFUtil {
 
 	/**
 	 * Поиск шрифта для критичного толкования
-	 * @param baseFont базовый шрифт
 	 * @return Font шрифт
 	 * @throws IOException 
 	 * @throws DocumentException 
@@ -813,7 +809,6 @@ public class PDFUtil {
 
 	/**
 	 * Поиск шрифта для предупреждения
-	 * @param baseFont базовый шрифт
 	 * @return Font шрифт
 	 * @throws IOException 
 	 * @throws DocumentException 
@@ -821,5 +816,124 @@ public class PDFUtil {
 	public static Font getWarningFont() throws DocumentException, IOException {
 		BaseFont baseFont = getBaseFont();
 		return new Font(baseFont, 12, Font.NORMAL, FONTCOLORYELLOW);
+	}
+
+	/**
+	 * Поиск шрифта для примечания
+	 * @param italic true - использовать курсив
+	 * @return Font шрифт
+	 * @throws IOException 
+	 * @throws DocumentException 
+	 */
+	public static Font getAnnotationFont(boolean italic) throws DocumentException, IOException {
+		BaseFont baseFont = getBaseFont();
+		return new Font(baseFont, 12, italic ? Font.ITALIC : Font.NORMAL, FONTCOLORGRAY);
+	}
+
+	/**
+	 * Генерация диаграммы Гантта
+	 * @param writer обработчик генерации PDF-файла
+	 * @param title заголовок диаграммы
+	 * @param cattitle заголовок категории
+	 * @param valtitle заголовок значения
+	 * @param bars массив значений
+	 * @param width ширина диаграммы
+	 * @param height высота диаграммы
+	 * @param legend true|false присутствие|отсутствие легенды
+	 * @return изображение диаграммы
+	 * @link https://www.programcreek.com/java-api-examples/index.php?api=org.jfree.chart.util.LineUtilities
+	 * @link https://www.programcreek.com/java-api-examples/?api=org.jfree.chart.axis.CategoryAxis
+	 * @link http://www.jfree.org/forum/viewtopic.php?t=22805
+	 */
+	public static Image printGanttChart(PdfWriter writer, String title, String cattitle, String valtitle, IntervalCategoryDataset dataset, float width, float height, boolean legend) {
+		try {
+	        if (0 == width)
+	        	width = 500;
+	        if (0 == height)
+	        	height = 600;
+
+		    DefaultFontMapper mapper = new DefaultFontMapper();
+		    mapper.insertDirectory(FONTDIR);
+		    String fontname = getFontName();
+		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters(fontname);
+		    if (pp != null)
+		        pp.encoding = BaseFont.IDENTITY_H;
+		    
+		    PdfContentByte cb = writer.getDirectContent();
+			PdfTemplate tpl = cb.createTemplate(width, height);
+			Graphics2D g2d = new PdfGraphics2D(tpl, width, height, mapper);
+			Rectangle2D r2d = new Rectangle2D.Double(0, 0, width, height);
+
+		    JFreeChart chart = ChartFactory.createGanttChart(title, cattitle, valtitle, dataset, legend, true, false);
+            java.awt.Font font = new java.awt.Font(fontname, java.awt.Font.PLAIN, 12);
+            chart.getTitle().setFont(font);
+            CategoryPlot plot = chart.getCategoryPlot();
+//            plot.setBackgroundPaint(new java.awt.Color(230, 230, 250));
+            java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 10);
+            plot.getDomainAxis().setTickLabelFont(sfont);
+            plot.getRangeAxis().setTickLabelFont(sfont);
+
+            if (legend)
+            	chart.getLegend().setItemFont(sfont);
+            else
+            	chart.getLegend().setVisible(false);
+
+            DateAxis axis = (DateAxis)plot.getRangeAxis();
+            axis.setDateFormatOverride(new SimpleDateFormat("dd.MM"));
+            axis.setAutoTickUnitSelection(false);
+            axis.setVerticalTickLabels(true);
+
+            final CategoryItemRenderer renderer = plot.getRenderer();
+            java.awt.Color[] colors = getColors();
+//            CategoryItemRendererState state = new CategoryItemRendererState(renderer.)
+//            Line2D l2d = 
+//            Shape shape = renderer.getBaseShape();
+//            	BasicStroke stroke = new BasicStroke(10.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 2.0f, dot, 0.0f);
+//            BasicStroke stroke = new BasicStroke(10.0f);
+            for (int i = 0; i < dataset.getRowCount(); i++) {
+            	renderer.setSeriesPaint(i, colors[i]);
+//            	renderer.setSeriesStroke(i, stroke);
+            }
+            plot.getDomainAxis().setCategoryMargin(0.05);
+            plot.getDomainAxis().setLowerMargin(0.05);
+            plot.getDomainAxis().setUpperMargin(0.05);
+//            GanttRenderer grenderer = (GanttRenderer)chart.getXYPlot().getRenderer();
+//            grenderer.setItemMargin(0);
+
+			chart.draw(g2d, r2d);
+			g2d.dispose();
+			return Image.getInstance(tpl);
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	private static java.awt.Color[] getColors() {
+		return new java.awt.Color[] {
+			java.awt.Color.black,
+			java.awt.Color.blue,
+			java.awt.Color.cyan,
+			java.awt.Color.gray,
+			java.awt.Color.green,
+			java.awt.Color.magenta,
+			java.awt.Color.orange,
+			java.awt.Color.pink,
+			java.awt.Color.red,
+
+			new java.awt.Color(0, 102, 0),		//Very dark green
+			new java.awt.Color(102, 51, 0),		//Brown
+			new java.awt.Color(102, 0, 153),	//Purple
+
+			new java.awt.Color(102, 102, 51),	//болотный
+			new java.awt.Color(0, 102, 102),	//бирюзовый
+			new java.awt.Color(102, 102, 153),	//сиреневый
+			new java.awt.Color(204, 102, 0),	//оранжевый
+
+			java.awt.Color.white,
+			java.awt.Color.yellow,
+			java.awt.Color.lightGray,
+			java.awt.Color.darkGray
+		};
 	}
 }
