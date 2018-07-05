@@ -117,6 +117,10 @@ public class PDFUtil {
 	 * Цвет предупреждений
 	 */
 	public static BaseColor FONTCOLORYELLOW = new BaseColor(255, 102, 51);
+	/**
+	 * Цвет позитивных сообщений
+	 */
+	public static BaseColor FONTGREEN = new BaseColor(0, 102, 51);
 
 	/**
 	 * Отображение информации о копирайте
@@ -423,10 +427,10 @@ public class PDFUtil {
             	((BarRenderer)plot.getRenderer()).setBarPainter(new BarPainter() {
 					@Override
 					public void paintBarShadow(Graphics2D arg0, BarRenderer arg1, int arg2, int arg3, RectangularShape arg4,
-							RectangleEdge arg5, boolean arg6) {}					
+						RectangleEdge arg5, boolean arg6) {}					
 					@Override
 					public void paintBar(Graphics2D arg0, BarRenderer arg1, int arg2, int arg3, RectangularShape arg4,
-							RectangleEdge arg5) {}
+						RectangleEdge arg5) {}
 				});
 
 	            Paint[] colors = new Paint[bars.length];
@@ -935,5 +939,16 @@ public class PDFUtil {
 			java.awt.Color.lightGray,
 			java.awt.Color.darkGray
 		};
+	}
+
+	/**
+	 * Поиск шрифта для позитивного текста
+	 * @return Font шрифт
+	 * @throws IOException 
+	 * @throws DocumentException 
+	 */
+	public static Font getSuccessFont() throws DocumentException, IOException {
+		BaseFont baseFont = getBaseFont();
+		return new Font(baseFont, 12, Font.NORMAL, FONTGREEN);
 	}
 }
