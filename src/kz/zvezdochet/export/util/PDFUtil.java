@@ -879,8 +879,6 @@ public class PDFUtil {
 
             if (legend)
             	chart.getLegend().setItemFont(sfont);
-            else
-            	chart.getLegend().setVisible(false);
 
             DateAxis axis = (DateAxis)plot.getRangeAxis();
             axis.setDateFormatOverride(new SimpleDateFormat("dd.MM"));
@@ -895,7 +893,8 @@ public class PDFUtil {
 //            	BasicStroke stroke = new BasicStroke(10.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 2.0f, dot, 0.0f);
 //            BasicStroke stroke = new BasicStroke(10.0f);
             for (int i = 0; i < dataset.getRowCount(); i++) {
-            	renderer.setSeriesPaint(i, colors[i]);
+            	java.awt.Color color = i >= colors.length ? java.awt.Color.black : colors[i];
+            	renderer.setSeriesPaint(i, color);
 //            	renderer.setSeriesStroke(i, stroke);
             }
             plot.getDomainAxis().setCategoryMargin(0.05);
@@ -913,6 +912,10 @@ public class PDFUtil {
 		return null;
 	}
 
+	/**
+	 * Возвращает набор цветов для диаграммы Гантта
+	 * @return массив AWT цветов
+	 */
 	private static java.awt.Color[] getColors() {
 		return new java.awt.Color[] {
 			java.awt.Color.black,
@@ -937,7 +940,22 @@ public class PDFUtil {
 			java.awt.Color.white,
 			java.awt.Color.yellow,
 			java.awt.Color.lightGray,
-			java.awt.Color.darkGray
+			java.awt.Color.darkGray,
+
+			new java.awt.Color(255, 102, 102),	//Very light red
+			new java.awt.Color(51, 204, 255),	//Very light blue
+			new java.awt.Color(51, 153, 255),	//Light blue
+			new java.awt.Color(102, 255, 102),	//Very light green
+			new java.awt.Color(255, 255, 204),	//Very light yellow
+			new java.awt.Color(255, 153, 0),	//Light orange
+			new java.awt.Color(255, 204, 51),	//Gold
+			new java.awt.Color(153, 102, 0),	//Light brown
+
+			new java.awt.Color(153, 0, 0),		//Very dark red
+			new java.awt.Color(102, 102, 51),	//Very dark blue
+			new java.awt.Color(0, 153, 0),		//Dark green
+			new java.awt.Color(51, 51, 51),		//Very dark grey
+			new java.awt.Color(51, 0, 0)		//Dark brown
 		};
 	}
 
