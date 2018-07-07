@@ -853,8 +853,17 @@ public class PDFUtil {
 		try {
 	        if (0 == width)
 	        	width = 500;
-	        if (0 == height)
-	        	height = 600;
+	        if (0 == height) {
+				int cnt = dataset.getRowCount();
+				if (cnt < 2)
+					height = 100;
+				else if (cnt < 5)
+					height = 250;
+				else if (cnt < 10)
+					height = 500;
+				else
+					height = 600;
+	        }
 
 		    DefaultFontMapper mapper = new DefaultFontMapper();
 		    mapper.insertDirectory(FONTDIR);
