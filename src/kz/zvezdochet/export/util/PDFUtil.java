@@ -36,6 +36,7 @@ import org.jfree.ui.RectangleEdge;
 
 import com.itextpdf.awt.DefaultFontMapper;
 import com.itextpdf.awt.PdfGraphics2D;
+import com.itextpdf.text.Anchor;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Chapter;
 import com.itextpdf.text.Chunk;
@@ -208,15 +209,21 @@ public class PDFUtil {
      * Печать заголовка документа
      * @param p абзац-контейнер
      * @param text текст
-     * @param baseFont базовый шрифт
+     * @param anchor анкор
      * http://developers.itextpdf.com/examples/itext-action-second-edition/chapter-5#225-moviecountries1.java
      */
-	public static Paragraph printHeader(Paragraph p, String text) {
+	public static Paragraph printHeader(Paragraph p, String text, String anchor) {
 		try {
 			BaseFont baseFont = getBaseFont();
 			Font font = new Font(baseFont, 18, Font.BOLD, FONTCOLORH);
 	        p.setAlignment(Element.ALIGN_CENTER);
-			p.add(new Phrase(text, font));
+	        if (null == anchor)
+	        	p.add(new Phrase(text, font));
+	        else {
+	        	Anchor anchorTarget = new Anchor(text, font);
+	        	anchorTarget.setName(anchor);
+	        	p.add(anchorTarget);
+	        }
 			p.add(Chunk.NEWLINE);
 		} catch (Exception e) {
 			e.printStackTrace();
