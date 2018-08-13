@@ -70,7 +70,6 @@ import com.itextpdf.tool.xml.pipeline.html.HtmlPipelineContext;
 import kz.zvezdochet.core.bean.ITextGender;
 import kz.zvezdochet.core.bean.TextGender;
 import kz.zvezdochet.core.util.PlatformUtil;
-import kz.zvezdochet.core.util.StringUtil;
 import kz.zvezdochet.export.Activator;
 import kz.zvezdochet.export.bean.Bar;
 
@@ -517,9 +516,10 @@ public class PDFUtil {
 	/**
 	 * Конвертация HTML-кода в PDF-текст
 	 * @param html HTML-код
+	 * @param font шрифт
 	 * @return фраза с текстом
 	 */
-	public static Phrase html2pdf(String html) {
+	public static Phrase html2pdf(String html, Font font) {
 	    Phrase phrase = new Phrase();
 		try {
 			//преобразуем html-абзацы в html-блоки
@@ -543,7 +543,9 @@ public class PDFUtil {
 				XMLWorker worker = new XMLWorker(css, true);
 			    XMLParser p = new XMLParser(worker);
 			    p.parse(is, Charset.forName("UTF-8"));
-			    phrase.setFont(getRegularFont());
+			    if (null == font)
+			    	font = getRegularFont();
+			    phrase.setFont(font);
 			    phrase.addAll(elements);
 			}
 		} catch (Exception e) {
@@ -694,7 +696,7 @@ public class PDFUtil {
 				Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType()), getSubheaderFont());
 				p.setSpacingBefore(10);
 				section.add(p);
-				section.add(new Paragraph(StringUtil.removeTags(gender.getText()), getRegularFont()));
+				section.add(new Paragraph(removeTags(gender.getText(), getRegularFont())));
 			};
 			section.add(Chunk.NEWLINE);
 		}
@@ -984,5 +986,30 @@ public class PDFUtil {
 	public static Font getSuccessFont() throws DocumentException, IOException {
 		BaseFont baseFont = getBaseFont();
 		return new Font(baseFont, 12, Font.NORMAL, FONTGREEN);
+	}
+
+    /**
+     * Удаляет из html-текста все теги
+     * @param html HTML-текст
+     * @param font шрифт
+     * @return строка без тегов
+     */
+    public static Phrase removeTags(String html, Font font) {
+    	if (null == html)
+    		return null;
+
+		try {
+			if (null == font)
+				font = getRegularFont();
+		} catch (DocumentException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+    	if (html.indexOf("<ul>") > -1)
+    		return html2pdf(html, font);
+
+    	return new Phrase(html.replaceAll("\\<.*?>", ""), font);
 	}
 }
