@@ -134,9 +134,9 @@ public class PDFUtil {
 			Font fonta = new Font(baseFont, 10, Font.UNDERLINE, FONTCOLOR);
 
 	        p.setAlignment(Element.ALIGN_CENTER);
-	        Chunk chunk = new Chunk("© 1998-" + Calendar.getInstance().get(Calendar.YEAR) + " Астрологический сервис ", font);
+	        Chunk chunk = new Chunk("© 1998-" + Calendar.getInstance().get(Calendar.YEAR) + " Астролог ", font);
 	        p.add(chunk);
-	        chunk = new Chunk("Звездочёт", fonta);
+	        chunk = new Chunk("Наталья Звездочёт", fonta);
 	        chunk.setAnchor(WEBSITE);
 	        p.add(chunk);
 		} catch (Exception e) {
@@ -1007,7 +1007,8 @@ public class PDFUtil {
 			e.printStackTrace();
 		}
 
-    	if (html.indexOf("<ul>") > -1)
+    	if (html.indexOf("<ul>") > -1
+    			|| html.indexOf("<ol>") > -1)
     		return html2pdf(html, font);
 
     	return new Phrase(html.replaceAll("\\<.*?>", ""), font);
