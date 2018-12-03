@@ -121,6 +121,10 @@ public class PDFUtil {
 	 * Цвет позитивных сообщений
 	 */
 	public static BaseColor FONTGREEN = new BaseColor(0, 102, 51);
+	/**
+	 * Цвет позитивных сообщений
+	 */
+	public static BaseColor FONTNEUTRAL = new BaseColor(102, 102, 102);
 
 	/**
 	 * Отображение информации о копирайте
@@ -1012,5 +1016,16 @@ public class PDFUtil {
     		return html2pdf(html, font);
 
     	return new Phrase(html.replaceAll("\\<.*?>", ""), font);
+	}
+
+	/**
+	 * Поиск шрифта для нейтрального текста
+	 * @return Font шрифт
+	 * @throws IOException 
+	 * @throws DocumentException 
+	 */
+	public static Font getNeutralFont() throws DocumentException, IOException {
+		BaseFont baseFont = getBaseFont();
+		return new Font(baseFont, 12, Font.NORMAL, FONTNEUTRAL);
 	}
 }
