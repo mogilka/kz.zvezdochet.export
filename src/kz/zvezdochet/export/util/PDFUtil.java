@@ -138,7 +138,7 @@ public class PDFUtil {
 			Font fonta = new Font(baseFont, 10, Font.UNDERLINE, FONTCOLOR);
 
 	        p.setAlignment(Element.ALIGN_CENTER);
-	        Chunk chunk = new Chunk("© 1998-" + Calendar.getInstance().get(Calendar.YEAR) + " Астролог ", font);
+	        Chunk chunk = new Chunk("© 2014-" + Calendar.getInstance().get(Calendar.YEAR) + " Астролог ", font);
 	        p.add(chunk);
 	        chunk = new Chunk("Наталья Звездочёт", fonta);
 	        chunk.setAnchor(WEBSITE);
@@ -426,7 +426,7 @@ public class PDFUtil {
             plot.setOutlineVisible(false);
 //            plot.setNoDataMessage("NO DATA!"); TODO
 
-            java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 10);
+            java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 9);
             plot.getDomainAxis().setTickLabelFont(sfont);
 
             if (legend)
