@@ -1028,4 +1028,38 @@ public class PDFUtil {
 		BaseFont baseFont = getBaseFont();
 		return new Font(baseFont, 12, Font.NORMAL, FONTNEUTRAL);
 	}
+
+	/**
+	 * Генерация гендерного толкования в виде фразы
+	 * @param dict справочник
+	 * @param female true|false женщина|мужчина
+	 * @param child true|false ребёнок|взрослый
+	 * @param health true - использовать толкование о здоровье
+	 * @return Phrase фраза
+	 * @throws IOException 
+	 * @throws DocumentException 
+	 */
+	public static Phrase printGenderCell(ITextGender dict, boolean female, boolean child, boolean health) throws DocumentException, IOException {
+		if (dict != null) {
+			Phrase phrase = new Phrase();
+			List<TextGender> genders = dict.getGenderTexts(female, child);
+			for (TextGender gender : genders) {
+				if (!health && gender.getType().equals("health"))
+					continue;
+				Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType()), getSubheaderFont());
+				phrase.add(p);
+				phrase.add(Chunk.NEWLINE);
+				phrase.add(Chunk.NEWLINE);
+				phrase.add(new Paragraph(removeTags(gender.getText(), getRegularFont())));
+			};
+			phrase.add(Chunk.NEWLINE);
+			return phrase;
+		}
+		return null;
+	}
+
+	/**
+	 * Ширина бокового поля документа по умолчанию
+	 */
+	public static float PAGEBORDERWIDTH = 40;
 }

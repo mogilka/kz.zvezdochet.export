@@ -7,6 +7,7 @@ import java.io.IOException;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Element;
+import com.itextpdf.text.PageSize;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Phrase;
 import com.itextpdf.text.pdf.PdfPCell;
@@ -20,11 +21,15 @@ public class ImageTable {
         File file = new File(filename);
         file.getParentFile().mkdirs();
 
-        Document document = new Document();
+        Document document = new Document(PageSize.A4);
         PdfWriter.getInstance(document, new FileOutputStream(file));
         document.open();
 
         PdfPTable table = new PdfPTable(3);
+        float w = document.getPageSize().getWidth();
+        float bw = 50; //document.getPageSize().getBorderWidthRight();
+        table.setTotalWidth(w - bw * 2);
+        table.setLockedWidth(true);
         //first row
 		PdfPCell cell = new PdfPCell();
 		table.addCell(cell);
