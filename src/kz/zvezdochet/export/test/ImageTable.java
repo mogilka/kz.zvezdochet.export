@@ -29,6 +29,7 @@ public class ImageTable {
         float w = document.getPageSize().getWidth();
         float bw = 50; //document.getPageSize().getBorderWidthRight();
         table.setTotalWidth(w - bw * 2);
+//        table.setWidthPercentage(100);
         table.setLockedWidth(true);
         //first row
 		PdfPCell cell = new PdfPCell();
