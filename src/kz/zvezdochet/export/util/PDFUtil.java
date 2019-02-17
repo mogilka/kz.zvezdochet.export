@@ -11,8 +11,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.eclipse.swt.graphics.Color;
 import org.jfree.chart.ChartFactory;
@@ -1050,7 +1053,15 @@ public class PDFUtil {
 				phrase.add(p);
 				phrase.add(Chunk.NEWLINE);
 				phrase.add(Chunk.NEWLINE);
-				phrase.add(new Paragraph(removeTags(gender.getText(), getRegularFont())));
+				String html = gender.getText();
+				html = html.replace("<ul>", "<div>")
+						.replace("</ul>", "</div>")
+					.replace("<ol>", "<div>")
+						.replace("</ol>", "</div>")
+					.replace("<li>", "<p>")
+						.replace("</li>", "</p>");
+
+				phrase.add(new Paragraph(removeTags(html, getRegularFont())));
 			};
 			phrase.add(Chunk.NEWLINE);
 			return phrase;
@@ -1062,4 +1073,58 @@ public class PDFUtil {
 	 * Ширина бокового поля документа по умолчанию
 	 */
 	public static float PAGEBORDERWIDTH = 40;
+
+	/**
+	 * Задание ширины границ ячейки
+	 * @param cell ячейка
+	 * @param top верхняя граница
+	 * @param right правая граница
+	 * @param bottom нижняя граница
+	 * @param left левая граница
+	 */
+	public static void setCellBorderWidths(PdfPCell cell, float top, float right, float bottom, float left) {
+		cell.setBorderWidthTop(top);
+		cell.setBorderWidthRight(right);
+		cell.setBorderWidthBottom(bottom);
+		cell.setBorderWidthLeft(left);
+	}
+
+	/**
+	 * Разбивка большого текста на порции для размещения в табличной ячейке
+	 * @param html HTML-текст
+	 * @return массив частей текста
+	 */
+	public static List<String> splitHtml(String html) {
+		int LIMIT = 2300;
+		List<String> parts = new ArrayList<String>();
+		if (html.length() <= LIMIT) {
+			parts.add(html);
+			return parts;
+		}
+
+		Matcher m = Pattern.compile("(?=(</p>))").matcher(html);
+		List<Integer> pos = new ArrayList<Integer>();
+		while (m.find()) 
+		    pos.add(m.start());
+
+		List<Integer> pos2 = new ArrayList<Integer>();
+		for (int i = 0; i < pos.size(); i++) {
+			int p = pos.get(i);
+			int l = pos2.isEmpty() ? LIMIT : LIMIT + pos2.get(pos2.size() - 1);
+			if (p >= l)
+				if (i > 0)
+					pos2.add(pos.get(i - 1));
+		}
+		pos2.add(html.length());
+
+		int steps = pos2.size();
+		for (int i = 0; i < steps; i++) {
+			int beginIndex = (0 == i) ? 0 : pos2.get(i - 1) + 4;
+			int endIndex = pos2.get(i) + 4;
+			parts.add(i == steps - 1
+				? html.substring(beginIndex)
+				: html.substring(beginIndex, endIndex));
+		}
+		return parts;
+	}
 }
