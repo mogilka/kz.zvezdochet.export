@@ -1095,7 +1095,7 @@ public class PDFUtil {
 	 * @return массив частей текста
 	 */
 	public static List<String> splitHtml(String html) {
-		int LIMIT = 2300;
+		int LIMIT = 2290;
 		List<String> parts = new ArrayList<String>();
 		if (html.length() <= LIMIT) {
 			parts.add(html);
@@ -1126,5 +1126,16 @@ public class PDFUtil {
 				: html.substring(beginIndex, endIndex));
 		}
 		return parts;
+	}
+
+	/**
+	 * Выравнивание текста ячейки вертикально по центру
+	 * @param cell ячейка
+	 * @param fontSize размер шрифта
+	 * @param capHeight размер заглавных символов шрифта
+	 */
+	public static void setCellVertical(PdfPCell cell, float fontSize, float capHeight) {
+		cell.setPaddingBottom(2 * (fontSize - capHeight));
+		cell.setVerticalAlignment(Element.ALIGN_MIDDLE); 
 	}
 }
