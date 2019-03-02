@@ -1033,7 +1033,7 @@ public class PDFUtil {
 	}
 
 	/**
-	 * Генерация гендерного толкования в виде фразы
+	 * Генерация гендерного толкования в виде фразы для табличной ячейки
 	 * @param dict справочник
 	 * @param female true|false женщина|мужчина
 	 * @param child true|false ребёнок|взрослый
@@ -1095,7 +1095,7 @@ public class PDFUtil {
 	 * @return массив частей текста
 	 */
 	public static List<String> splitHtml(String html) {
-		int LIMIT = 2290;
+		int LIMIT = 2220;
 		List<String> parts = new ArrayList<String>();
 		if (html.length() <= LIMIT) {
 			parts.add(html);
@@ -1137,5 +1137,23 @@ public class PDFUtil {
 	public static void setCellVertical(PdfPCell cell, float fontSize, float capHeight) {
 		cell.setPaddingBottom(2 * (fontSize - capHeight));
 		cell.setVerticalAlignment(Element.ALIGN_MIDDLE); 
+	}
+
+	/**
+	 * Генерация текстового толкования в виде фразы для табличной ячейки
+	 * @param html HTML-текст
+	 * @throws IOException 
+	 * @throws DocumentException 
+	 */
+	public static Phrase printTextCell(String html) throws DocumentException, IOException {
+		Phrase phrase = new Phrase();
+		html = html.replace("<ul>", "<div>")
+					.replace("</ul>", "</div>")
+				.replace("<ol>", "<div>")
+					.replace("</ol>", "</div>")
+				.replace("<li>", "<p>")
+					.replace("</li>", "</p>");
+		phrase.add(new Paragraph(removeTags(html, getRegularFont())));
+		return phrase;
 	}
 }
