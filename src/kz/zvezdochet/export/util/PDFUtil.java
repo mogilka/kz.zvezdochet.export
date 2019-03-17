@@ -1156,4 +1156,29 @@ public class PDFUtil {
 		phrase.add(new Paragraph(removeTags(html, getRegularFont())));
 		return phrase;
 	}
+
+	/**
+	 * Печать секции-подраздела
+	 * @param chapter раздел документа
+	 * @param title наименование секции
+	 * @return секция
+	 * @throws IOException 
+	 * @throws DocumentException 
+	 */
+	public static Section printSubsection(Chapter chapter, String title) throws DocumentException, IOException {
+		Paragraph p = new Paragraph(title, getHeaderFont());
+//		p.setSpacingBefore(10);
+		return chapter.addSection(p);
+	}
+
+	/**
+	 * Поиск шрифта для мелкого текста
+	 * @return Font шрифт
+	 * @throws IOException 
+	 * @throws DocumentException 
+	 */
+	public static Font getSmallFont() throws DocumentException, IOException {
+		BaseFont baseFont = getBaseFont();
+		return new Font(baseFont, 10, Font.NORMAL);
+	}
 }
