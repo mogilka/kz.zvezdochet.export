@@ -125,9 +125,9 @@ public class PDFUtil {
 	 */
 	public static BaseColor FONTGREEN = new BaseColor(0, 102, 51);
 	/**
-	 * Цвет позитивных сообщений
+	 * Цвет нейтральных сообщений
 	 */
-	public static BaseColor FONTNEUTRAL = new BaseColor(102, 102, 102);
+	public static BaseColor FONTNEUTRAL = new BaseColor(51, 102, 153);
 
 	/**
 	 * Отображение информации о копирайте
