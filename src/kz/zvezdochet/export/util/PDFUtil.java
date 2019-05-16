@@ -194,7 +194,7 @@ public class PDFUtil {
 		return new Font(baseFont, 14, Font.BOLD, FONTCOLOR);
 	}
 
-	public static String AUTHOR = "Наталья Диденко";
+	public static String AUTHOR = "Наталья Звездочёт";
 	public static String WEBSITE = "https://zvezdochet.guru";
 
 	/**
