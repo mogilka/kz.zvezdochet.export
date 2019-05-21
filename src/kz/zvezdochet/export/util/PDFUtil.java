@@ -241,14 +241,24 @@ public class PDFUtil {
 	 * Печать секции
 	 * @param chapter раздел документа
 	 * @param title наименование секции
+     * @param anchor анкор
 	 * @return секция
 	 * @throws IOException 
 	 * @throws DocumentException 
 	 */
-	public static Section printSection(Chapter chapter, String title) throws DocumentException, IOException {
+	public static Section printSection(Chapter chapter, String title, String anchor) throws DocumentException, IOException {
 		BaseFont baseFont = getBaseFont();
 		Font fonth3 = new Font(baseFont, 16, Font.BOLD, FONTCOLORH);
-		Paragraph p = new Paragraph(title, fonth3);
+		Paragraph p = new Paragraph("", fonth3);
+
+        if (null == anchor)
+        	p.add(new Phrase(title, fonth3));
+        else {
+        	Anchor anchorTarget = new Anchor(title, fonth3);
+        	anchorTarget.setName(anchor);
+        	p.add(anchorTarget);
+        }
+
 		p.setSpacingBefore(10);
 		p.add(Chunk.NEWLINE);
 		printHr(p);
