@@ -4,7 +4,7 @@ import org.eclipse.swt.graphics.Color;
 
 /**
  * Элемент диаграммы
- * @author Nataly Didenko
+ * @author Natalie Didenko
  *
  */
 public class Bar {

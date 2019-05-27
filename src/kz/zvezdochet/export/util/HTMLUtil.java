@@ -9,7 +9,7 @@ import kz.zvezdochet.export.bean.Bar;
 
 /**
  * Набор утилит для html-экспорта
- * @author Nataly Didenko
+ * @author Natalie Didenko
  *
  */
 @SuppressWarnings("unchecked")

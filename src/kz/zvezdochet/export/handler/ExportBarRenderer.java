@@ -6,7 +6,7 @@ import org.jfree.chart.renderer.category.BarRenderer;
 
 /**
  * Отрисовщик разноцветных категорий внутри серии диаграммы 
- * @author Nataly Didenko
+ * @author Natalie Didenko
  *
  */
 public class ExportBarRenderer extends BarRenderer {
