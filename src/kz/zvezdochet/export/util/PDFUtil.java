@@ -769,11 +769,12 @@ public class PDFUtil {
             axis.setAutoTickUnitSelection(false);
             axis.setVerticalTickLabels(true);
 
-            final XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer)plot.getRenderer();
+            final XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
             int scnt = dataset.getSeries().size();
             for (int i = 0; i < scnt; i++)
-            	renderer.setSeriesStroke(i, new BasicStroke(3));
-
+            	renderer.setSeriesStroke(i, new BasicStroke(4.0f));
+            plot.setRenderer(renderer);
+                
 			chart.draw(g2d, r2d);
 			g2d.dispose();
 			return Image.getInstance(tpl);
