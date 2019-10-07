@@ -13,9 +13,10 @@ public class Bar {
 		super();
 	}
 
-	public Bar(String name, double value, Color color, String category) {
+	public Bar(String name, double value, Color color, String category, String code) {
 		super();
 		this.name = name;
+		this.code = code;
 		this.value = value;
 		this.color = color;
 		this.category = category;
@@ -24,6 +25,10 @@ public class Bar {
 	 * Описание
 	 */
 	private String name;
+	/**
+	 * Код
+	 */
+	private String code;
 	/**
 	 * Значение
 	 */
@@ -60,5 +65,11 @@ public class Bar {
 	}
 	public void setColor(Color color) {
 		this.color = color;
+	}
+	public String getCode() {
+		return code;
+	}
+	public void setCode(String code) {
+		this.code = code;
 	}
 }
