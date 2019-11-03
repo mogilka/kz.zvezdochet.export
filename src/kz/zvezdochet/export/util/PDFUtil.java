@@ -82,10 +82,6 @@ import kz.zvezdochet.export.bean.Bar;
  *
  */
 public class PDFUtil {
-	/**
-	 * Каталог размещения обычных шрифтов
-	 */
-	public static String FONTDIR = "/usr/share/fonts/truetype/freefont";
 
 	/**
 	 * Наименование обычного шрифта
@@ -158,7 +154,8 @@ public class PDFUtil {
 	 * @throws IOException
 	 */
 	public static BaseFont getBaseFont() throws DocumentException, IOException {
-		return BaseFont.createFont(FONTDIR + "/" + FONTFILE, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+		String fontdir = getFontDir();
+		return BaseFont.createFont(fontdir + "/" + FONTFILE, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
 	}
 
 	/**
@@ -349,7 +346,7 @@ public class PDFUtil {
 	        	height = 240;
 
 		    DefaultFontMapper mapper = new DefaultFontMapper();
-		    mapper.insertDirectory(FONTDIR);
+		    mapper.insertDirectory(getFontDir());
 		    String fontname = getFontName();
 		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters(fontname);
 		    if (pp != null)
@@ -414,7 +411,7 @@ public class PDFUtil {
 	        	height = 240;
 
 		    DefaultFontMapper mapper = new DefaultFontMapper();
-		    mapper.insertDirectory(FONTDIR);
+		    mapper.insertDirectory(getFontDir());
 		    String fontname = getFontName();
 		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters(fontname);
 		    if (pp != null)
@@ -593,7 +590,7 @@ public class PDFUtil {
 	        	height = 240;
 
 		    DefaultFontMapper mapper = new DefaultFontMapper();
-		    mapper.insertDirectory(FONTDIR);
+		    mapper.insertDirectory(getFontDir());
 		    String fontname = getFontName();
 		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters(fontname);
 		    if (pp != null)
@@ -654,7 +651,7 @@ public class PDFUtil {
 	        	height = 240;
 
 		    DefaultFontMapper mapper = new DefaultFontMapper();
-		    mapper.insertDirectory(FONTDIR);
+		    mapper.insertDirectory(getFontDir());
 		    String fontname = getFontName();
 		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters(fontname);
 		    if (pp != null)
@@ -739,7 +736,7 @@ public class PDFUtil {
 	        	height = 240;
 
 		    DefaultFontMapper mapper = new DefaultFontMapper();
-		    mapper.insertDirectory(FONTDIR);
+		    mapper.insertDirectory(getFontDir());
 		    String fontname = getFontName();
 		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters(fontname);
 		    if (pp != null)
@@ -791,7 +788,7 @@ public class PDFUtil {
 	 * @throws IOException
 	 */
 	public static BaseFont getAstroFont() throws DocumentException, IOException {
-		String filename = PlatformUtil.getPath(Activator.PLUGIN_ID, "/font/Cardo-Regular.ttf").getPath();
+		String filename = getFontDir() + "/Cardo-Regular.ttf";
 		return BaseFont.createFont(filename, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
 	}
 
@@ -893,7 +890,7 @@ public class PDFUtil {
 	        }
 
 		    DefaultFontMapper mapper = new DefaultFontMapper();
-		    mapper.insertDirectory(FONTDIR);
+		    mapper.insertDirectory(getFontDir());
 		    String fontname = getFontName();
 		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters(fontname);
 		    if (pp != null)
@@ -1191,5 +1188,15 @@ public class PDFUtil {
 	public static Font getSmallFont() throws DocumentException, IOException {
 		BaseFont baseFont = getBaseFont();
 		return new Font(baseFont, 10, Font.NORMAL);
+	}
+
+	/**
+	 * Поиск директории с шрифтами
+	 * @return String каталог
+	 * @throws DocumentException
+	 * @throws IOException
+	 */
+	public static String getFontDir() throws DocumentException, IOException {
+		return PlatformUtil.getPath(Activator.PLUGIN_ID, "/font").getPath();
 	}
 }
