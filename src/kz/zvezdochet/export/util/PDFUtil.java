@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,6 +59,7 @@ import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfTemplate;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.itextpdf.text.pdf.draw.LineSeparator;
+import com.itextpdf.text.pdf.draw.VerticalPositionMark;
 import com.itextpdf.tool.xml.ElementList;
 import com.itextpdf.tool.xml.XMLWorker;
 import com.itextpdf.tool.xml.XMLWorkerHelper;
@@ -73,8 +75,10 @@ import com.itextpdf.tool.xml.pipeline.html.HtmlPipelineContext;
 import kz.zvezdochet.core.bean.ITextGender;
 import kz.zvezdochet.core.bean.TextGender;
 import kz.zvezdochet.core.util.PlatformUtil;
+import kz.zvezdochet.core.util.Translit;
 import kz.zvezdochet.export.Activator;
 import kz.zvezdochet.export.bean.Bar;
+import kz.zvezdochet.export.handler.PageEventHandler;
 
 /**
  * Набор утилит для pdf-экспорта
@@ -220,10 +224,11 @@ public class PDFUtil {
 			BaseFont baseFont = getBaseFont();
 			Font font = new Font(baseFont, 18, Font.BOLD, FONTCOLORH);
 	        p.setAlignment(Element.ALIGN_CENTER);
+	        Chunk chunk = new Chunk(text, font).setLocalDestination(Translit.convert(text, true));
 	        if (null == anchor)
-	        	p.add(new Phrase(text, font));
+	        	p.add(chunk);
 	        else {
-	        	Anchor anchorTarget = new Anchor(text, font);
+	        	Anchor anchorTarget = new Anchor(chunk);
 	        	anchorTarget.setName(anchor);
 	        	p.add(anchorTarget);
 	        }
@@ -1199,4 +1204,33 @@ public class PDFUtil {
 	public static String getFontDir() throws DocumentException, IOException {
 		return PlatformUtil.getPath(Activator.PLUGIN_ID, "/font").getPath();
 	}
+
+	public static void printTOC(Document document, PageEventHandler handler) throws DocumentException {
+		try {
+	        Chapter intro = new Chapter(printHeader(new Paragraph(), "Содержание", null), 0);
+	        intro.setNumberDepth(0);
+	        document.add(intro);
+	
+	        Map<String, Integer> pageByTitle = handler.getPageByTitle();
+	        final Map<String, PdfTemplate> tocPlaceholder = handler.getTocPlaceholder();
+	
+		    for (Map.Entry<String, Integer> entry : pageByTitle.entrySet()) {
+	            final String title = entry.getKey();
+	            final Chunk chunk = new Chunk(title, getRegularFont()).setLocalGoto(Translit.convert(title, true));
+	            document.add(new Paragraph(chunk));
+	
+	            // Add a placeholder for the page reference
+	            document.add(new VerticalPositionMark() {
+	                @Override
+	                public void draw(final PdfContentByte canvas, final float llx, final float lly, final float urx, final float ury, final float y) {
+	                    final PdfTemplate createTemplate = canvas.createTemplate(50, 50);
+	                    tocPlaceholder.put(title, createTemplate);
+	                    canvas.addTemplate(createTemplate, urx - 50, y);
+	                }
+	            });
+	        }
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+    }
 }
