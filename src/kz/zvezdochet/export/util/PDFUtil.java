@@ -21,6 +21,8 @@ import java.util.regex.Pattern;
 import org.eclipse.swt.graphics.Color;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.CategoryAxis;
+import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PiePlot;
@@ -29,8 +31,10 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.category.BarPainter;
 import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.category.CategoryItemRenderer;
+import org.jfree.chart.renderer.category.LineAndShapeRenderer;
 import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.category.IntervalCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
@@ -1030,6 +1034,8 @@ public class PDFUtil {
     	if (html.indexOf("<ul>") > -1
     			|| html.indexOf("<ol>") > -1)
     		return html2pdf(html, font);
+//    		html = html.replaceAll("<li>", "<p>• ")
+//    			.replaceAll("</li>", "</p>");
 
     	return new Phrase(html.replaceAll("\\<.*?>", ""), font);
 	}
@@ -1172,16 +1178,30 @@ public class PDFUtil {
 
 	/**
 	 * Печать секции-подраздела
-	 * @param chapter раздел документа
+	 * @param section раздел документа
 	 * @param title наименование секции
+     * @param anchor анкор
 	 * @return секция
 	 * @throws IOException 
 	 * @throws DocumentException 
 	 */
-	public static Section printSubsection(Chapter chapter, String title) throws DocumentException, IOException {
-		Paragraph p = new Paragraph(title, getHeaderFont());
-//		p.setSpacingBefore(10);
-		return chapter.addSection(p);
+	public static Section printSubsection(Section section, String title, String anchor) throws DocumentException, IOException {
+		BaseFont baseFont = getBaseFont();
+		Font fonth3 = new Font(baseFont, 14, Font.BOLD, FONTCOLORH);
+
+		Paragraph p = new Paragraph("", fonth3);
+
+        if (null == anchor)
+        	p.add(new Phrase(title, fonth3));
+        else {
+        	Anchor anchorTarget = new Anchor(title, fonth3);
+        	anchorTarget.setName(anchor);
+        	p.add(anchorTarget);
+        }
+		p.setSpacingBefore(10);
+		p.add(Chunk.NEWLINE);
+		printHr(p);
+		return section.addSection(p);
 	}
 
 	/**
@@ -1233,4 +1253,69 @@ public class PDFUtil {
 			e.printStackTrace();
 		}
     }
+
+	/**
+	 * Генерация линейных диаграмм с датами
+	 * @param writer обработчик генерации PDF-файла
+	 * @param title заголовок диаграммы
+	 * @param cattitle заголовок категории
+	 * @param valtitle заголовок значения
+	 * @param bars массив значений
+	 * @param width ширина диаграммы
+	 * @param height высота диаграммы
+	 * @param legend true|false присутствие|отсутствие легенды
+	 * @return изображение диаграммы
+	 */
+	public static Image printLineChart(PdfWriter writer, String title, String cattitle, String valtitle, CategoryDataset dataset, float width, float height, boolean legend) {
+		try {
+	        if (0 == width)
+	        	width = 320;
+	        if (0 == height)
+	        	height = 240;
+
+		    DefaultFontMapper mapper = new DefaultFontMapper();
+		    mapper.insertDirectory(getFontDir());
+		    String fontname = getFontName();
+		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters(fontname);
+		    if (pp != null)
+		        pp.encoding = BaseFont.IDENTITY_H;
+		    
+		    PdfContentByte cb = writer.getDirectContent();
+			PdfTemplate tpl = cb.createTemplate(width, height);
+			Graphics2D g2d = new PdfGraphics2D(tpl, width, height, mapper);
+			Rectangle2D r2d = new Rectangle2D.Double(0, 0, width, height);
+
+		    JFreeChart chart = ChartFactory.createLineChart(title, cattitle, valtitle, dataset, PlotOrientation.VERTICAL, legend, true, false);
+            java.awt.Font font = new java.awt.Font(fontname, java.awt.Font.PLAIN, 12);
+            chart.getTitle().setFont(font);
+
+            CategoryPlot plot = chart.getCategoryPlot();
+            plot.setBackgroundPaint(new java.awt.Color(230, 230, 250));
+            java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 10);
+            CategoryAxis axis = plot.getDomainAxis();
+            axis.setLabelFont(sfont);
+            plot.getRangeAxis().setLabelFont(sfont);
+
+            int count = dataset.getColumnCount();
+            if (count > 5)
+            	axis.setCategoryLabelPositions(CategoryLabelPositions.UP_90);
+
+            LineAndShapeRenderer renderer = new LineAndShapeRenderer();
+            for (int i = 0; i < count; i++)
+            	renderer.setSeriesStroke(i, new BasicStroke(4.0f));
+            plot.setRenderer(renderer);
+
+            if (legend)
+            	chart.getLegend().setItemFont(sfont);
+            else
+            	chart.getLegend().setVisible(false);
+
+			chart.draw(g2d, r2d);
+			g2d.dispose();
+			return Image.getInstance(tpl);
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 }
