@@ -115,7 +115,7 @@ public class PDFUtil {
 	/**
 	 * Цвет примечаний
 	 */
-	public static BaseColor FONTCOLORGRAY = new BaseColor(102, 102, 102);
+	public static BaseColor FONTCOLORGRAY = new BaseColor(153, 153, 153);
 	/**
 	 * Цвет критичных сообщений
 	 */
