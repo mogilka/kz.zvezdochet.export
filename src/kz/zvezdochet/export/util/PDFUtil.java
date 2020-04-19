@@ -150,6 +150,8 @@ public class PDFUtil {
 	        chunk = new Chunk("Наталья Звездочёт", fonta);
 	        chunk.setAnchor(WEBSITE);
 	        p.add(chunk);
+	        p.add(Chunk.NEWLINE);
+	        p.add(new Chunk("Все права защищены", font));
 		} catch (Exception e) {
 		    e.printStackTrace();
 		}
