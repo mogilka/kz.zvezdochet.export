@@ -57,7 +57,7 @@ public class PageEventHandler implements PdfPageEvent {
 	        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase("Астролог Наталья Звездочёт", fonth),
 	        	x, document.top() + 10, 0);
 	        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase(String.valueOf(writer.getPageNumber()), fonth),
-	        	x, document.bottom() - 10, 0);
+	        	x, document.bottom() - 15, 0);
 		} catch (DocumentException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
