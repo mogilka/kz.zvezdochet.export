@@ -211,7 +211,7 @@ public class PDFUtil {
 	 */
 	public static void getMetaData(Document doc, String title) {
         doc.addTitle(title);
-        doc.addSubject("Астрологический сервис Звездочёт");
+        doc.addSubject(title);
         doc.addKeywords("гороскоп, прогноз, звездочёт, натальная астрология, сидерическая астрология");
         doc.addAuthor(AUTHOR);
         doc.addCreator(AUTHOR);
@@ -1079,7 +1079,7 @@ public class PDFUtil {
 						.replace("</ul>", "</div>")
 					.replace("<ol>", "<div>")
 						.replace("</ol>", "</div>")
-					.replace("<li>", "<p>")
+					.replace("<li>", "<p> • ")
 						.replace("</li>", "</p>");
 
 				phrase.add(new Paragraph(removeTags(html, getRegularFont())));
