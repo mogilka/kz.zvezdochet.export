@@ -1169,11 +1169,12 @@ public class PDFUtil {
 	public static Phrase printTextCell(String html) throws DocumentException, IOException {
 		Phrase phrase = new Phrase();
 		html = html.replace("<ul>", "<div>")
-					.replace("</ul>", "</div>")
-				.replace("<ol>", "<div>")
-					.replace("</ol>", "</div>")
-				.replace("<li>", "<p>")
-					.replace("</li>", "</p>");
+				.replace("</ul>", "</div>")
+			.replace("<ol>", "<div>")
+				.replace("</ol>", "</div>")
+			.replace("<li>", "<p> • ")
+				.replace("</li>", "</p>");
+
 		phrase.add(new Paragraph(removeTags(html, getRegularFont())));
 		return phrase;
 	}
