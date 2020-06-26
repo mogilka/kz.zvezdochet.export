@@ -1033,11 +1033,11 @@ public class PDFUtil {
 			e.printStackTrace();
 		}
 
-    	if (html.indexOf("<ul>") > -1
-    			|| html.indexOf("<ol>") > -1)
-    		return html2pdf(html, font);
-//    		html = html.replaceAll("<li>", "<p>• ")
-//    			.replaceAll("</li>", "</p>");
+    	if (html.indexOf("<ul>") > -1)
+    		html = html.replaceAll("<ul>", "").replaceAll("</ul>", "");
+    	if (html.indexOf("<ol>") > -1)
+   			html = html.replaceAll("<ol>", "<div>").replaceAll("</ol>", "</div>");
+    	html = html.replaceAll("<li>", "<div>   • ").replaceAll("</li>", "</div>");
 
     	return new Phrase(html.replaceAll("\\<.*?>", ""), font);
 	}
@@ -1075,13 +1075,6 @@ public class PDFUtil {
 				phrase.add(Chunk.NEWLINE);
 				phrase.add(Chunk.NEWLINE);
 				String html = gender.getText();
-				html = html.replace("<ul>", "<div>")
-						.replace("</ul>", "</div>")
-					.replace("<ol>", "<div>")
-						.replace("</ol>", "</div>")
-					.replace("<li>", "<p> • ")
-						.replace("</li>", "</p>");
-
 				phrase.add(new Paragraph(removeTags(html, getRegularFont())));
 			};
 			phrase.add(Chunk.NEWLINE);
@@ -1320,5 +1313,57 @@ public class PDFUtil {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	/**
+	 * Генерация толкования по типу в виде фразы для табличной ячейки
+	 * @param dict справочник
+	 * @param type love|deal
+	 * @return Phrase фраза
+	 * @throws IOException 
+	 * @throws DocumentException 
+	 */
+	public static Phrase printGenderCell(ITextGender dict, String type) throws DocumentException, IOException {
+		if (dict != null) {
+			Phrase phrase = new Phrase();
+			TextGender gender = dict.getGenderText(type);
+			if (null == gender)
+				return null;
+			
+			phrase.add(Chunk.NEWLINE);
+			Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType()), getSubheaderFont());
+			phrase.add(p);
+			phrase.add(Chunk.NEWLINE);
+			phrase.add(Chunk.NEWLINE);
+			String html = gender.getText();
+			phrase.add(new Paragraph(removeTags(html, getRegularFont())));
+			phrase.add(Chunk.NEWLINE);
+			return phrase;
+		}
+		return null;
+	}
+
+	/**
+	 * Генерация толкования по типу
+	 * @param dict справочник
+	 * @param type love|deal
+	 * @return Phrase фраза
+	 * @throws IOException 
+	 * @throws DocumentException 
+	 */
+	public static void printGender(Section section, ITextGender dict, String type) throws DocumentException, IOException {
+		if (dict != null) {
+			TextGender gender = dict.getGenderText(type);
+			if (null == gender)
+				return;
+
+			section.add(Chunk.NEWLINE);
+			Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType()), getSubheaderFont());
+			section.add(p);
+			section.add(Chunk.NEWLINE);
+			String html = gender.getText();
+			section.add(new Paragraph(removeTags(html, getRegularFont())));
+			section.add(Chunk.NEWLINE);
+		}
 	}
 }
