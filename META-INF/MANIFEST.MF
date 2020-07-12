@@ -54,4 +54,5 @@ Bundle-ClassPath: lib/html-gen.jar,
  lib/jfreechart.jar,
  lib/swtgraphics2d.jar,
  lib/xerces.jar,
- lib/xmlworker.jar
+ lib/xmlworker.jar,
+ lib/xchart.jar

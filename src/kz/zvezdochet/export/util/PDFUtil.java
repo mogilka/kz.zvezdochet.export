@@ -13,6 +13,8 @@ import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -38,9 +40,26 @@ import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.category.IntervalCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
+import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
+import org.jfree.data.time.TimeSeriesDataItem;
+import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleEdge;
+import org.knowm.xchart.BitmapEncoder;
+import org.knowm.xchart.PieChart;
+import org.knowm.xchart.PieChartBuilder;
+import org.knowm.xchart.XYChart;
+import org.knowm.xchart.XYChartBuilder;
+import org.knowm.xchart.BitmapEncoder.BitmapFormat;
+import org.knowm.xchart.CategoryChart;
+import org.knowm.xchart.CategoryChartBuilder;
+import org.knowm.xchart.style.CategoryStyler;
+import org.knowm.xchart.style.PieStyler;
+import org.knowm.xchart.style.Styler.LegendLayout;
+import org.knowm.xchart.style.Styler.LegendPosition;
+import org.knowm.xchart.style.Styler.TextAlignment;
+import org.knowm.xchart.style.XYStyler;
 
 import com.itextpdf.awt.DefaultFontMapper;
 import com.itextpdf.awt.PdfGraphics2D;
@@ -78,6 +97,7 @@ import com.itextpdf.tool.xml.pipeline.html.HtmlPipelineContext;
 
 import kz.zvezdochet.core.bean.ITextGender;
 import kz.zvezdochet.core.bean.TextGender;
+import kz.zvezdochet.core.util.OsUtil;
 import kz.zvezdochet.core.util.PlatformUtil;
 import kz.zvezdochet.core.util.Translit;
 import kz.zvezdochet.export.Activator;
@@ -350,6 +370,8 @@ public class PDFUtil {
 	 * @return изображение диаграммы
 	 */
 	public static Image printPie(PdfWriter writer, String title, Bar[] bars, float width, float height, boolean legend) {
+		if (!OsUtil.getOS().equals(OsUtil.OS.LINUX))
+			return printPie2(writer, title, bars, width, height, legend);
 		try {
 	        if (0 == width)
 	        	width = 320;
@@ -411,10 +433,12 @@ public class PDFUtil {
 	 * @param legend true|false присутствие|отсутствие легенды
 	 * @param vertical true|false вертикальная|горизонтальная диаграмма
 	 * @param customColors true|false цвета серий брать из массива значений|цвета по умолчанию
-	 * @return изображение диаграммы
+	 * @return изображение диаграммы Image|PdfTable
 	 */
-	public static Image printBars(PdfWriter writer, String title, String cattitle, String valtitle, Bar[] bars, 
+	public static Element printBars(PdfWriter writer, String title, String cattitle, String valtitle, Bar[] bars, 
 			float width, float height, boolean legend, boolean vertical, boolean customColors) {
+		if (!OsUtil.getOS().equals(OsUtil.OS.LINUX))
+			return printTableChart(writer, bars, title, false);
 		try {
 	        if (0 == width)
 	        	width = 320;
@@ -488,48 +512,65 @@ public class PDFUtil {
 	/**
 	 * Динамическое создание диаграммы с помощью стандартной html-таблицы
 	 * @param writer обработчик генерации PDF-файла
-	 * @param maxval максимальное число значения
 	 * @param bars массив категорий диаграммы
 	 * @param title наименование диаграммы
-	 * @param baseFont базовый шрифт
+	 * @param showValue true|false отобразить|скрыть числовое значение
 	 * @return табличная диаграмма
 	 */
-	public static PdfPTable printTableChart(PdfWriter writer, double maxval, Bar[] bars, String title) {
+	public static PdfPTable printTableChart(PdfWriter writer, Bar[] bars, String title, boolean showValue) {
         PdfPTable table = new PdfPTable(3);
         float height = 20;
-        float factor = 14;
+
+        BaseColor[] colors = { BaseColor.RED, BaseColor.YELLOW, BaseColor.GREEN, BaseColor.BLUE,
+        	BaseColor.ORANGE, BaseColor.PINK, BaseColor.CYAN, BaseColor.MAGENTA,
+        	BaseColor.BLACK, BaseColor.DARK_GRAY, BaseColor.GRAY, BaseColor.LIGHT_GRAY, BaseColor.WHITE};
+
+        double maxval = 0;
+        for (Bar bar : bars) {
+	    	double val = bar.getValue();
+	    	if (val < 0.1)
+	    		bar.setValue(0.1);
+	    	if (val > maxval)
+	    		maxval = val;
+        }
+        int MAX_VALUE = 20;
+        float factor = (maxval >= MAX_VALUE) ? 7 : 14;
         float maxvalue = (float)maxval * factor;
+
         try {
-	        table.setWidths(new float[] { maxvalue, 20, 120 });
+	        table.setWidths(new float[] { maxvalue, 20, 180 });
 	        table.setSpacingBefore(10);
 	        table.setSummary(title);
 			BaseFont baseFont = getBaseFont();
-	        Font font = new Font(baseFont, 12, Font.NORMAL, BaseColor.BLACK);
+	        Font font = new Font(baseFont, 10, Font.NORMAL, BaseColor.BLACK);
+	        BaseColor bcolor = new BaseColor(230, 230, 250);
+	        int i = -1;
 			for (Bar bar : bars) {
 				double val = bar.getValue();
 				//элемент диаграммы
 		        PdfTemplate tpl = writer.getDirectContent().createTemplate(maxvalue, height);
 		        Color color = bar.getColor();
-		        tpl.setColorFill(new BaseColor(color.getRed(), color.getGreen(), color.getBlue()));
+		        tpl.setColorFill((null == color) ? colors[++i] : new BaseColor(color.getRed(), color.getGreen(), color.getBlue()));
 		        tpl.rectangle(0, 0, (float)val * factor, height);
 		        tpl.fill();
 		        writer.releaseTemplate(tpl);
 		        PdfPCell cell = new PdfPCell(Image.getInstance(tpl));
 		        cell.setBorder(PdfPCell.NO_BORDER);
 		        cell.setPadding(2);
-		        cell.setBackgroundColor(new BaseColor(230, 230, 250));
+		        cell.setBackgroundColor(bcolor);
 		        table.addCell(cell);
-	
+
 				//числовое значение
-		        cell = new PdfPCell(new Phrase(String.valueOf(val), font));
+		        String sval = showValue? String.valueOf(val) : "";
+		        cell = new PdfPCell(new Phrase(sval, font));
 		        cell.setBorder(PdfPCell.NO_BORDER);
-		        cell.setBackgroundColor(new BaseColor(230, 230, 250));
+		        cell.setBackgroundColor(bcolor);
 		        table.addCell(cell);
 	
 				//подпись
 		        cell = new PdfPCell(new Phrase(bar.getName(), font));
 		        cell.setBorder(PdfPCell.NO_BORDER);
-		        cell.setBackgroundColor(new BaseColor(230, 230, 250));
+		        cell.setBackgroundColor(bcolor);
 		        table.addCell(cell);
 			}
 		} catch (Exception e) {
@@ -545,6 +586,9 @@ public class PDFUtil {
 	 * @return фраза с текстом
 	 */
 	public static Phrase html2pdf(String html, Font font) {
+		if (!OsUtil.getOS().equals(OsUtil.OS.LINUX))
+			return removeTags(html, font);
+		
 	    Phrase phrase = new Phrase();
 		try {
 			//преобразуем html-абзацы в html-блоки
@@ -594,6 +638,8 @@ public class PDFUtil {
 	 * @return изображение диаграммы
 	 */
 	public static Image printStackChart(PdfWriter writer, String title, String cattitle, String valtitle, Bar[] bars, float width, float height, boolean legend) {
+		if (!OsUtil.getOS().equals(OsUtil.OS.LINUX))
+			return printStackChart2(writer, title, cattitle, valtitle, bars, width, height, legend, false);
 		try {
 	        if (0 == width)
 	        	width = 320;
@@ -647,14 +693,17 @@ public class PDFUtil {
 	 * @param title заголовок диаграммы
 	 * @param cattitle заголовок категории
 	 * @param valtitle заголовок значения
-	 * @param bars массив значений
+	 * @param map массив значений
 	 * @param width ширина диаграммы
 	 * @param height высота диаграммы
 	 * @param legend true|false присутствие|отсутствие легенды
 	 * @return изображение диаграммы
 	 * @link http://www.codejava.net/java-se/graphics/using-jfreechart-to-draw-xy-line-chart-with-xydataset
 	 */
-	public static Image printGraphics(PdfWriter writer, String title, String cattitle, String valtitle, XYSeriesCollection dataset, float width, float height, boolean legend) {
+	@SuppressWarnings("unchecked")
+	public static Image printGraphics(PdfWriter writer, String title, String cattitle, String valtitle, Map<String, Object[]> map, float width, float height, boolean legend) {
+		if (!OsUtil.getOS().equals(OsUtil.OS.LINUX))
+			return printGraphics2(writer, title, cattitle, valtitle, map, width, height, legend);
 		try {
 	        if (0 == width)
 	        	width = 320;
@@ -672,6 +721,17 @@ public class PDFUtil {
 			PdfTemplate tpl = cb.createTemplate(width, height);
 			Graphics2D g2d = new PdfGraphics2D(tpl, width, height, mapper);
 			Rectangle2D r2d = new Rectangle2D.Double(0, 0, width, height);
+
+			XYSeriesCollection dataset = new XYSeriesCollection();
+			for (Map.Entry<String, Object[]> entry : map.entrySet()) {
+		        XYSeries series = new XYSeries(entry.getKey());
+				Object[] arr = entry.getValue();
+				List<Integer> names = (List<Integer>)arr[0];
+				List<Double> values = (List<Double>)arr[1];
+        		for (int i = 0; i < names.size(); i++)
+					series.add(names.get(i), values.get(i));
+        		dataset.addSeries(series);
+			}
 
 		    JFreeChart chart = ChartFactory.createXYLineChart(title, cattitle, valtitle, dataset, PlotOrientation.VERTICAL, legend, true, false);
             java.awt.Font font = new java.awt.Font(fontname, java.awt.Font.PLAIN, 12);
@@ -733,13 +793,15 @@ public class PDFUtil {
 	 * @param title заголовок диаграммы
 	 * @param cattitle заголовок категории
 	 * @param valtitle заголовок значения
-	 * @param bars массив значений
+	 * @param dataset массив значений
 	 * @param width ширина диаграммы
 	 * @param height высота диаграммы
 	 * @param legend true|false присутствие|отсутствие легенды
 	 * @return изображение диаграммы
 	 */
 	public static Image printTimeChart(PdfWriter writer, String title, String cattitle, String valtitle, TimeSeriesCollection dataset, float width, float height, boolean legend) {
+		if (!OsUtil.getOS().equals(OsUtil.OS.LINUX))
+			return printTimeChart2(writer, title, cattitle, valtitle, dataset, width, height, legend);
 		try {
 	        if (0 == width)
 	        	width = 320;
@@ -1032,13 +1094,7 @@ public class PDFUtil {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-    	if (html.indexOf("<ul>") > -1)
-    		html = html.replaceAll("<ul>", "").replaceAll("</ul>", "");
-    	if (html.indexOf("<ol>") > -1)
-   			html = html.replaceAll("<ol>", "<div>").replaceAll("</ol>", "</div>");
-    	html = html.replaceAll("<li>", "<div>   • ").replaceAll("</li>", "</div>");
-
+    	html = html.replaceAll("<li>", "<p>   • ").replaceAll("</li>", "</p>");
     	return new Phrase(html.replaceAll("\\<.*?>", ""), font);
 	}
 
@@ -1365,5 +1421,303 @@ public class PDFUtil {
 			section.add(new Paragraph(removeTags(html, getRegularFont())));
 			section.add(Chunk.NEWLINE);
 		}
+	}
+
+	/**
+	 * Генерация круговой диаграммы
+	 * @param writer обработчик генерации PDF-файла
+	 * @param title заголовок диаграммы
+	 * @param bars массив значений
+	 * @param width ширина диаграммы
+	 * @param height высота диаграммы
+	 * @param legend true|false присутствие|отсутствие легенды
+	 * @return изображение диаграммы
+	 * @link https://knowm.org/open-source/xchart/xchart-example-code
+	 */
+	public static Image printPie2(PdfWriter writer, String title, Bar[] bars, float width, float height, boolean legend) {
+		try {
+	        if (0 == width)
+	        	width = 320;
+	        if (0 == height)
+	        	height = 240;
+
+			PieChart chart = new PieChartBuilder().width((int)width).height((int)height).title(title).build();
+			PieStyler styler = chart.getStyler();
+            java.awt.Font sfont = new java.awt.Font(java.awt.Font.SANS_SERIF, java.awt.Font.PLAIN, 10);
+
+            legend = true;
+			if (legend) {
+				styler.setLegendVisible(true);
+				styler.setLegendFont(sfont);
+				styler.setLegendBackgroundColor(new java.awt.Color(240, 240, 230));
+				styler.setLegendBorderColor(java.awt.Color.WHITE);
+				boolean big = bars.length > 6;
+				if (big)
+					styler.setLegendPadding(1);
+			}
+			styler.setChartTitleFont(new java.awt.Font(java.awt.Font.SANS_SERIF, java.awt.Font.PLAIN, 12));
+			styler.setHasAnnotations(false);
+			styler.setChartBackgroundColor(java.awt.Color.WHITE);
+			styler.setPlotBackgroundColor(new java.awt.Color(230, 230, 250));
+			styler.setPlotBorderColor(java.awt.Color.WHITE);
+
+			java.awt.Color[] colors = { java.awt.Color.RED, java.awt.Color.YELLOW, java.awt.Color.GREEN, java.awt.Color.BLUE,
+				java.awt.Color.ORANGE, java.awt.Color.PINK, java.awt.Color.CYAN, java.awt.Color.MAGENTA,
+				java.awt.Color.BLACK, java.awt.Color.DARK_GRAY, java.awt.Color.GRAY, java.awt.Color.LIGHT_GRAY, java.awt.Color.WHITE};
+
+			java.awt.Color[] sliceColors = new java.awt.Color[bars.length];
+			for (int i = 0; i < bars.length; i++) {
+				Bar bar = bars[i];
+				if (bar != null) {
+					Color color = bar.getColor();
+					sliceColors[i] = (null == color)
+						? colors[i]
+						: new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue());
+					chart.addSeries(bar.getName(), bar.getValue());
+				}
+			}
+			styler.setSeriesColors(sliceColors);
+
+	        Image image = null;
+	        try {
+	        	String filename = PlatformUtil.getPath(Activator.PLUGIN_ID, "/tmp/pie.png").getPath();
+	            BitmapEncoder.saveBitmapWithDPI(chart, filename, BitmapFormat.PNG, 300);
+	            image = Image.getInstance(filename);
+	            image.scaleAbsolute(width, height);
+	        } catch (IOException e) {
+	        	e.printStackTrace();
+	        } catch (DocumentException e1) {
+	        	e1.printStackTrace();
+	        }
+			return image;
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * Динамическое создание диаграммы с помощью стандартной html-таблицы
+	 * Генерация диаграмм
+	 * @param writer обработчик генерации PDF-файла
+	 * @param title заголовок диаграммы
+	 * @param cattitle заголовок категории
+	 * @param valtitle заголовок значения
+	 * @param bars массив значений
+	 * @param width ширина диаграммы
+	 * @param height высота диаграммы
+	 * @param legend true|false присутствие|отсутствие легенды
+	 * @param vertical true|false вертикальные|горизонтальные подписи
+	 * @return изображение диаграммы
+	 */
+	@SuppressWarnings("unchecked")
+	public static Image printStackChart2(PdfWriter writer, String title, String cattitle, String valtitle, Bar[] bars, float width, float height, boolean legend, boolean vertical) {
+		try {
+	        if (0 == width)
+	        	width = 320;
+	        if (0 == height)
+	        	height = 240;
+
+	        CategoryChart chart = new CategoryChartBuilder().width((int)width).height((int)height).title(title).xAxisTitle(cattitle).yAxisTitle(valtitle).build();
+//	        CategoryChart chart = new CategoryChartBuilder().width((int)width).height((int)height).title(title).xAxisTitle(cattitle).yAxisTitle(valtitle).theme(ChartTheme.GGPlot2).build();
+			CategoryStyler styler = chart.getStyler();
+            java.awt.Font sfont = new java.awt.Font(java.awt.Font.SANS_SERIF, java.awt.Font.PLAIN, 10);
+
+			if (legend) {
+				styler.setLegendVisible(true);
+				styler.setLegendFont(sfont);
+				styler.setLegendBackgroundColor(java.awt.Color.WHITE);
+				styler.setLegendBorderColor(java.awt.Color.DARK_GRAY);				
+				styler.setLegendPosition(LegendPosition.OutsideS);
+				styler.setLegendLayout(LegendLayout.Horizontal);
+			}
+			styler.setChartTitleFont(new java.awt.Font(java.awt.Font.SANS_SERIF, java.awt.Font.PLAIN, 12));
+			styler.setChartBackgroundColor(java.awt.Color.WHITE);
+			styler.setPlotBackgroundColor(new java.awt.Color(230, 230, 250));
+			styler.setPlotBorderColor(java.awt.Color.WHITE);
+			styler.setOverlapped(true);
+			styler.setXAxisTitleVisible(false);
+			if (vertical) {
+				styler.setXAxisLabelRotation(60);
+				styler.setXAxisLabelAlignmentVertical(TextAlignment.Right);
+			}
+			styler.setAxisTickLabelsFont(sfont);
+			styler.setYAxisTitleVisible(false);
+			styler.setYAxisTicksVisible(vertical);
+
+	        Map<String, Object[]> map = new HashMap<>();
+			for (Bar bar : bars) {
+				if (bar != null) {
+					Object[] arr = map.get(bar.getCategory());
+					List<String> names = null;
+					List<Double> values = null;
+					if (null == arr) {
+						names = new ArrayList<String>();
+						values = new ArrayList<Double>();
+					} else {
+						names = (List<String>)arr[0];
+						values = (List<Double>)arr[1];
+					}
+					names.add(bar.getName());
+					values.add(bar.getValue());
+					map.put(bar.getCategory(), new Object[] {names, values});
+				}
+			}
+
+			for (Map.Entry<String, Object[]> entry : map.entrySet()) {
+				Object[] arr = entry.getValue();
+				List<String> names = (List<String>)arr[0];
+				List<Double> values = (List<Double>)arr[1];
+				chart.addSeries(entry.getKey(), names, values);
+			}
+
+	        Image image = null;
+	        try {
+	        	String filename = PlatformUtil.getPath(Activator.PLUGIN_ID, "/tmp/stack.png").getPath();
+	            BitmapEncoder.saveBitmapWithDPI(chart, filename, BitmapFormat.PNG, 300);
+	            image = Image.getInstance(filename);
+	            image.scaleAbsolute(width, height);
+	        } catch (IOException e) {
+	        	e.printStackTrace();
+	        } catch (DocumentException e1) {
+	        	e1.printStackTrace();
+	        }
+			return image;
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * Генерация линейных диаграмм
+	 * @param writer обработчик генерации PDF-файла
+	 * @param title заголовок диаграммы
+	 * @param cattitle заголовок категории
+	 * @param valtitle заголовок значения
+	 * @param map массив значений
+	 * @param width ширина диаграммы
+	 * @param height высота диаграммы
+	 * @param legend true|false присутствие|отсутствие легенды
+	 * @return изображение диаграммы
+	 * @link http://www.codejava.net/java-se/graphics/using-jfreechart-to-draw-xy-line-chart-with-xydataset
+	 */
+	@SuppressWarnings("unchecked")
+	public static Image printGraphics2(PdfWriter writer, String title, String cattitle, String valtitle, Map<String, Object[]> map, float width, float height, boolean legend) {
+		try {
+	        if (0 == width)
+	        	width = 320;
+	        if (0 == height)
+	        	height = 240;
+
+	        XYChart chart = new XYChartBuilder().width((int)width).height((int)height).title(title).build();
+			XYStyler styler = chart.getStyler();
+            java.awt.Font sfont = new java.awt.Font(java.awt.Font.SANS_SERIF, java.awt.Font.PLAIN, 10);
+
+			if (legend) {
+				styler.setLegendVisible(true);
+				styler.setLegendFont(sfont);
+				styler.setLegendBackgroundColor(new java.awt.Color(240, 240,230));
+				styler.setLegendBorderColor(java.awt.Color.WHITE);				
+				styler.setLegendPosition(LegendPosition.OutsideS);
+				styler.setLegendLayout(LegendLayout.Horizontal);
+			}
+			styler.setChartTitleFont(new java.awt.Font(java.awt.Font.SANS_SERIF, java.awt.Font.PLAIN, 12));
+			styler.setChartBackgroundColor(java.awt.Color.WHITE);
+			styler.setPlotBackgroundColor(new java.awt.Color(230, 230, 250));
+			styler.setPlotBorderColor(java.awt.Color.WHITE);
+
+			for (Map.Entry<String, Object[]> entry : map.entrySet()) {
+				Object[] arr = entry.getValue();
+				List<Integer> names = (List<Integer>)arr[0];
+				List<Double> values = (List<Double>)arr[1];
+				chart.addSeries(entry.getKey(), names, values);
+			}
+
+	        Image image = null;
+	        try {
+	        	String filename = PlatformUtil.getPath(Activator.PLUGIN_ID, "/tmp/graph.png").getPath();
+	            BitmapEncoder.saveBitmapWithDPI(chart, filename, BitmapFormat.PNG, 300);
+	            image = Image.getInstance(filename);
+	            image.scaleAbsolute(width, height);
+	        } catch (IOException e) {
+	        	e.printStackTrace();
+	        } catch (DocumentException e1) {
+	        	e1.printStackTrace();
+	        }
+			return image;
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * Генерация временных диаграмм
+	 * @param writer обработчик генерации PDF-файла
+	 * @param title заголовок диаграммы
+	 * @param cattitle заголовок категории
+	 * @param valtitle заголовок значения
+	 * @param dataset массив значений
+	 * @param width ширина диаграммы
+	 * @param height высота диаграммы
+	 * @param legend true|false присутствие|отсутствие легенды
+	 * @return изображение диаграммы
+	 */
+	@SuppressWarnings("unchecked")
+	public static Image printTimeChart2(PdfWriter writer, String title, String cattitle, String valtitle, TimeSeriesCollection dataset, float width, float height, boolean legend) {
+		try {
+	        if (0 == width)
+	        	width = 320;
+	        if (0 == height)
+	        	height = 240;
+
+	        XYChart chart = new XYChartBuilder().width((int)width).height((int)height).title(title).build();
+			XYStyler styler = chart.getStyler();
+            java.awt.Font sfont = new java.awt.Font(java.awt.Font.SANS_SERIF, java.awt.Font.PLAIN, 10);
+
+			if (legend) {
+				styler.setLegendVisible(true);
+				styler.setLegendFont(sfont);
+				styler.setLegendBackgroundColor(new java.awt.Color(240, 240,230));
+				styler.setLegendBorderColor(java.awt.Color.WHITE);				
+				styler.setLegendPosition(LegendPosition.OutsideS);
+				styler.setLegendLayout(LegendLayout.Horizontal);
+			}
+			styler.setChartTitleFont(new java.awt.Font(java.awt.Font.SANS_SERIF, java.awt.Font.PLAIN, 12));
+			styler.setChartBackgroundColor(java.awt.Color.WHITE);
+			styler.setPlotBackgroundColor(new java.awt.Color(230, 230, 250));
+			styler.setPlotBorderColor(java.awt.Color.WHITE);
+			styler.setDatePattern("dd.MM");
+			styler.setAxisTickLabelsFont(sfont);
+
+			for (Object object : dataset.getSeries()) {
+				TimeSeries series = (TimeSeries)object;
+				List<TimeSeriesDataItem> items = (List<TimeSeriesDataItem>)series.getItems();
+				List<Date> names = new ArrayList<Date>();
+				List<Number> values = new ArrayList<Number>();
+				for (TimeSeriesDataItem tsdi : items) {
+					names.add(tsdi.getPeriod().getStart());
+					values.add(tsdi.getValue());
+				}
+				chart.addSeries(series.getKey().toString(), names, values);
+			}
+
+	        Image image = null;
+	        try {
+	        	String filename = PlatformUtil.getPath(Activator.PLUGIN_ID, "/tmp/time.png").getPath();
+	            BitmapEncoder.saveBitmapWithDPI(chart, filename, BitmapFormat.PNG, 300);
+	            image = Image.getInstance(filename);
+	            image.scaleAbsolute(width, height);
+	        } catch (IOException e) {
+	        	e.printStackTrace();
+	        } catch (DocumentException e1) {
+	        	e1.printStackTrace();
+	        }
+			return image;
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }
