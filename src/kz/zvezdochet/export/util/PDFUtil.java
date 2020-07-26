@@ -527,6 +527,8 @@ public class PDFUtil {
 
         double maxval = 0;
         for (Bar bar : bars) {
+        	if (null == bar)
+        		continue;
 	    	double val = bar.getValue();
 	    	if (val < 0.1)
 	    		bar.setValue(0.1);
@@ -546,6 +548,8 @@ public class PDFUtil {
 	        BaseColor bcolor = new BaseColor(230, 230, 250);
 	        int i = -1;
 			for (Bar bar : bars) {
+	        	if (null == bar)
+	        		continue;
 				double val = bar.getValue();
 				//элемент диаграммы
 		        PdfTemplate tpl = writer.getDirectContent().createTemplate(maxvalue, height);
