@@ -1724,4 +1724,17 @@ public class PDFUtil {
 		}
 		return null;
 	}
+
+	/**
+	 * Белые границы ячеек по умолчанию для форматированной таблицы
+	 */
+	public static BaseColor BORDERCOLOR = BaseColor.WHITE;
+	/**
+	 * Размер границы между ячейками таблицы
+	 */
+	public static float BORDERWIDTH = 1;
+	/**
+	 * Размер отступа текста от границы ячеки таблицы
+	 */
+	public static float CELLPADDING = 8;
 }
