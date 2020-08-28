@@ -289,16 +289,22 @@ public class PDFUtil {
 
 		p.setSpacingBefore(10);
 		p.add(Chunk.NEWLINE);
-		printHr(p);
+		printHr(p, 0, null);
 		return chapter.addSection(p);
 	}
 
 	/**
 	 * Печать разделителя
 	 * @param p абзац
+	 * @param width ширина линии
+	 * @param color цвет линии
 	 */
-	private static void printHr(Paragraph p) {
-		p.add(new Chunk(new LineSeparator(2, 100, FONTCOLORH, Element.ALIGN_CENTER, 0)));	
+	public static void printHr(Paragraph p, float width, BaseColor color) {
+		if (0 == width)
+			width = 2;
+		if (null == color)
+			color = FONTCOLORH;
+		p.add(new Chunk(new LineSeparator(width, 100, color, Element.ALIGN_CENTER, 0)));	
 	}
 
 	/**
@@ -1256,7 +1262,7 @@ public class PDFUtil {
         }
 		p.setSpacingBefore(10);
 		p.add(Chunk.NEWLINE);
-		printHr(p);
+		printHr(p, 0, null);
 		return section.addSection(p);
 	}
 
