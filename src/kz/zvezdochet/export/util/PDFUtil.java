@@ -1797,7 +1797,8 @@ public class PDFUtil {
             CategoryPlot plot = (CategoryPlot)chart.getPlot();
             plot.setBackgroundPaint(new java.awt.Color(230, 230, 250));
             plot.setOutlineVisible(false);
-            plot.getDomainAxis().setLabelFont(new java.awt.Font(getFontSymbolName(), java.awt.Font.PLAIN, 10));
+            java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 9);
+            plot.getDomainAxis().setTickLabelFont(sfont);
             plot.getRangeAxis().setTickLabelsVisible(false);
 
             StackedBarRenderer renderer = (StackedBarRenderer)plot.getRenderer();
@@ -1815,10 +1816,9 @@ public class PDFUtil {
 				}
             	renderer.setSeriesPaint(++i, new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue()));
 	        }
-            if (legend) {
-                java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 10);
+            if (legend)
             	chart.getLegend().setItemFont(sfont);
-            }
+
 			chart.draw(g2d, r2d);
 			g2d.dispose();
 			return Image.getInstance(tpl);
