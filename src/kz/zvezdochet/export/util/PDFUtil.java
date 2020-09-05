@@ -34,6 +34,7 @@ import org.jfree.chart.renderer.category.BarPainter;
 import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.category.CategoryItemRenderer;
 import org.jfree.chart.renderer.category.LineAndShapeRenderer;
+import org.jfree.chart.renderer.category.StackedBarRenderer;
 import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.category.CategoryDataset;
@@ -47,13 +48,13 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleEdge;
 import org.knowm.xchart.BitmapEncoder;
+import org.knowm.xchart.BitmapEncoder.BitmapFormat;
+import org.knowm.xchart.CategoryChart;
+import org.knowm.xchart.CategoryChartBuilder;
 import org.knowm.xchart.PieChart;
 import org.knowm.xchart.PieChartBuilder;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
-import org.knowm.xchart.BitmapEncoder.BitmapFormat;
-import org.knowm.xchart.CategoryChart;
-import org.knowm.xchart.CategoryChartBuilder;
 import org.knowm.xchart.style.CategoryStyler;
 import org.knowm.xchart.style.PieStyler;
 import org.knowm.xchart.style.Styler.LegendLayout;
@@ -1761,10 +1762,70 @@ public class PDFUtil {
 	 * @return изображение диаграммы
 	 */
 	public static Image printMultiStackChart(PdfWriter writer, String title, String cattitle, String valtitle, Map<String, Bar[]> map, float width, float height, boolean legend) {
-		if (OsUtil.getOS().equals(OsUtil.OS.LINUX))
-			return printStackChart(writer, title, cattitle, valtitle, map.get(map.keySet().iterator().next()), width, height, legend);
-		else
+		if (!OsUtil.getOS().equals(OsUtil.OS.LINUX))
 			return printMultiStackChart2(writer, title, cattitle, valtitle, map, width, height, legend, false);
+
+		try {
+	        if (0 == width)
+	        	width = 320;
+	        if (0 == height)
+	        	height = 240;
+
+		    DefaultFontMapper mapper = new DefaultFontMapper();
+		    mapper.insertDirectory(getFontDir());
+		    String fontname = getFontName();
+		    DefaultFontMapper.BaseFontParameters pp = mapper.getBaseFontParameters(fontname);
+		    if (pp != null)
+		        pp.encoding = BaseFont.IDENTITY_H;
+
+		    PdfContentByte cb = writer.getDirectContent();
+			PdfTemplate tpl = cb.createTemplate(width, height);
+			Graphics2D g2d = new PdfGraphics2D(tpl, width, height, mapper);
+			Rectangle2D r2d = new Rectangle2D.Double(0, 0, width, height);
+
+			DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+	        for (Map.Entry<String, Bar[]> entry : map.entrySet()) {
+	        	Bar[] bars = map.get(entry.getKey());
+				for (Bar bar : bars)
+					if (bar != null)
+						dataset.addValue(bar.getValue(), bar.getCategory(), bar.getName());
+	        }
+	        
+		    JFreeChart chart = ChartFactory.createStackedBarChart(title, cattitle, valtitle, dataset, PlotOrientation.VERTICAL, legend, true, false);
+            java.awt.Font font = new java.awt.Font(fontname, java.awt.Font.PLAIN, 12);
+            chart.getTitle().setFont(font);
+            CategoryPlot plot = (CategoryPlot)chart.getPlot();
+            plot.setBackgroundPaint(new java.awt.Color(230, 230, 250));
+            plot.setOutlineVisible(false);
+            plot.getDomainAxis().setLabelFont(new java.awt.Font(getFontSymbolName(), java.awt.Font.PLAIN, 10));
+            plot.getRangeAxis().setTickLabelsVisible(false);
+
+            StackedBarRenderer renderer = (StackedBarRenderer)plot.getRenderer();
+            renderer.setBarPainter(new StandardBarPainter());
+            int i = -1;
+	        for (Map.Entry<String, Bar[]> entry : map.entrySet()) {
+	        	Color color = null;
+	        	Bar[] bars = map.get(entry.getKey());
+	        	int j = -1;
+				for (Bar bar : bars) {
+					if (++j > 0)
+						continue;
+					if (bar != null)
+						color = bar.getColor();
+				}
+            	renderer.setSeriesPaint(++i, new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue()));
+	        }
+            if (legend) {
+                java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 10);
+            	chart.getLegend().setItemFont(sfont);
+            }
+			chart.draw(g2d, r2d);
+			g2d.dispose();
+			return Image.getInstance(tpl);
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	/**
