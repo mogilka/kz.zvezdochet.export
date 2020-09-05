@@ -107,7 +107,8 @@ import kz.zvezdochet.export.handler.PageEventHandler;
 /**
  * Набор утилит для pdf-экспорта
  * @author Natalie Didenko
- *
+ * @link http://www.jfree.org/jfreechart/samples.html
+ * @link https://knowm.org/open-source/xchart/xchart-example-code/
  */
 public class PDFUtil {
 
@@ -1568,8 +1569,10 @@ public class PDFUtil {
 						names = (List<String>)arr[0];
 						values = (List<Double>)arr[1];
 					}
-					names.add(bar.getName());
-					values.add(bar.getValue());
+					if (!names.contains(bar.getName())) {
+						names.add(bar.getName());
+						values.add(bar.getValue());
+					}
 					map.put(bar.getCategory(), new Object[] {names, values});
 				}
 			}
@@ -1743,4 +1746,126 @@ public class PDFUtil {
 	 * Размер отступа текста от границы ячеки таблицы
 	 */
 	public static float CELLPADDING = 8;
+
+	/**
+	 * Динамическое создание диаграммы с множеством категорий
+	 * Генерация диаграмм
+	 * @param writer обработчик генерации PDF-файла
+	 * @param title заголовок диаграммы
+	 * @param cattitle заголовок категории
+	 * @param valtitle заголовок значения
+	 * @param map массив значений
+	 * @param width ширина диаграммы
+	 * @param height высота диаграммы
+	 * @param legend true|false присутствие|отсутствие легенды
+	 * @return изображение диаграммы
+	 */
+	public static Image printMultiStackChart(PdfWriter writer, String title, String cattitle, String valtitle, Map<String, Bar[]> map, float width, float height, boolean legend) {
+		if (OsUtil.getOS().equals(OsUtil.OS.LINUX))
+			return printStackChart(writer, title, cattitle, valtitle, map.get(map.keySet().iterator().next()), width, height, legend);
+		else
+			return printMultiStackChart2(writer, title, cattitle, valtitle, map, width, height, legend, false);
+	}
+
+	/**
+	 * Динамическое создание диаграммы с множеством категорий
+	 * Генерация диаграмм
+	 * @param writer обработчик генерации PDF-файла
+	 * @param title заголовок диаграммы
+	 * @param cattitle заголовок категории
+	 * @param valtitle заголовок значения
+	 * @param bmap массив значений
+	 * @param width ширина диаграммы
+	 * @param height высота диаграммы
+	 * @param legend true|false присутствие|отсутствие легенды
+	 * @param vertical true|false вертикальные|горизонтальные подписи
+	 * @return изображение диаграммы
+	 */
+	@SuppressWarnings("unchecked")
+	public static Image printMultiStackChart2(PdfWriter writer, String title, String cattitle, String valtitle, Map<String, Bar[]> bmap, float width, float height, boolean legend, boolean vertical) {
+		try {
+	        if (0 == width)
+	        	width = 320;
+	        if (0 == height)
+	        	height = bmap.size() * 40;
+
+	        CategoryChart chart = new CategoryChartBuilder().width((int)width).height((int)height).title(title).xAxisTitle(cattitle).yAxisTitle(valtitle).build();
+			CategoryStyler styler = chart.getStyler();
+            java.awt.Font sfont = new java.awt.Font(java.awt.Font.SANS_SERIF, java.awt.Font.PLAIN, 10);
+
+			if (legend) {
+				styler.setLegendVisible(true);
+				styler.setLegendFont(sfont);
+				styler.setLegendBackgroundColor(new java.awt.Color(240, 240, 230));
+				styler.setLegendBorderColor(java.awt.Color.WHITE);
+			}
+			styler.setChartTitleVisible(false);
+			styler.setChartBackgroundColor(java.awt.Color.WHITE);
+			styler.setPlotBackgroundColor(new java.awt.Color(230, 230, 250));
+			styler.setPlotBorderColor(java.awt.Color.WHITE);
+			styler.setPlotGridVerticalLinesVisible(false);
+			styler.setStacked(true);
+//			if (vertical) {
+//				styler.setXAxisLabelRotation(60);
+//				styler.setXAxisLabelAlignmentVertical(TextAlignment.Right);
+//			}
+			styler.setAxisTickLabelsFont(sfont);
+			styler.setYAxisTitleVisible(false);
+			styler.setYAxisTicksVisible(false);
+
+			java.awt.Color[] colors = new java.awt.Color[bmap.size()];
+
+	        Map<String, Object[]> map = new HashMap<>();
+			int i = -1;
+	        for (Map.Entry<String, Bar[]> entry : bmap.entrySet()) {
+				Object[] arr = map.get(entry.getKey());
+				List<String> names = null;
+				List<Double> values = null;
+				if (null == arr) {
+					names = new ArrayList<String>();
+					values = new ArrayList<Double>();
+				} else {
+					names = (List<String>)arr[0];
+					values = (List<Double>)arr[1];
+				}
+
+				int j = -1;
+				Color color = null;
+				for (Bar bar : entry.getValue()) {
+					if (bar != null) {
+						names.add(bar.getName());
+						values.add(bar.getValue());
+						if (++j < 1)
+						 color = bar.getColor();
+					}
+				}
+				map.put(entry.getKey(), new Object[] {names, values});
+	            colors[++i] = new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue());
+	        }
+			styler.setSeriesColors(colors);
+
+			for (Map.Entry<String, Object[]> entry : map.entrySet()) {
+				Object[] arr = entry.getValue();
+				List<String> names = (List<String>)arr[0];
+				List<Double> values = (List<Double>)arr[1];
+				chart.addSeries(entry.getKey(), names, values);
+			}
+
+	        Image image = null;
+	        try {
+	        	String filename = PlatformUtil.getPath(Activator.PLUGIN_ID, "/tmp/multi.png").getPath();
+	            BitmapEncoder.saveBitmapWithDPI(chart, filename, BitmapFormat.PNG, 300);
+	            image = Image.getInstance(filename);
+	            image.scaleAbsolute(width, height);
+	        } catch (IOException e) {
+	        	e.printStackTrace();
+	        } catch (DocumentException e1) {
+	        	e1.printStackTrace();
+	        }
+			return image;
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 }
