@@ -1413,6 +1413,7 @@ public class PDFUtil {
 
 	/**
 	 * Генерация толкования по типу
+	 * @param section раздел
 	 * @param dict справочник
 	 * @param type love|deal
 	 * @return Phrase фраза
@@ -1425,9 +1426,12 @@ public class PDFUtil {
 			if (null == gender)
 				return;
 
-			section.add(Chunk.NEWLINE);
-			Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType()), getSubheaderFont());
-			section.add(p);
+			String header = PDFUtil.getGenderHeader(gender.getType());
+			if (!header.isEmpty()) {
+				section.add(Chunk.NEWLINE);
+				Paragraph p = new Paragraph(header, getSubheaderFont());
+				section.add(p);
+			}
 			section.add(Chunk.NEWLINE);
 			String html = gender.getText();
 			section.add(new Paragraph(removeTags(html, getRegularFont())));
