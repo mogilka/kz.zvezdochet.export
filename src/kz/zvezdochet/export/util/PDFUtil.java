@@ -1803,7 +1803,7 @@ public class PDFUtil {
             plot.setOutlineVisible(false);
             java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 9);
             plot.getDomainAxis().setTickLabelFont(sfont);
-            plot.getRangeAxis().setTickLabelsVisible(false);
+            plot.getRangeAxis().setTickLabelsVisible(true);
 
             StackedBarRenderer renderer = (StackedBarRenderer)plot.getRenderer();
             renderer.setBarPainter(new StandardBarPainter());
@@ -1818,7 +1818,8 @@ public class PDFUtil {
 					if (bar != null)
 						color = bar.getColor();
 				}
-            	renderer.setSeriesPaint(++i, new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue()));
+				if (color != null)
+					renderer.setSeriesPaint(++i, new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue()));
 	        }
             if (legend)
             	chart.getLegend().setItemFont(sfont);
