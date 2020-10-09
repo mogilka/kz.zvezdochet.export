@@ -1801,7 +1801,7 @@ public class PDFUtil {
             CategoryPlot plot = (CategoryPlot)chart.getPlot();
             plot.setBackgroundPaint(new java.awt.Color(230, 230, 250));
             plot.setOutlineVisible(false);
-            java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 9);
+            java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 8);
             plot.getDomainAxis().setTickLabelFont(sfont);
             plot.getRangeAxis().setTickLabelsVisible(true);
 
