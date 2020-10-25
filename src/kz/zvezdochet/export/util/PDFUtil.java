@@ -1822,7 +1822,7 @@ public class PDFUtil {
 					renderer.setSeriesPaint(++i, new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue()));
 	        }
             if (legend)
-            	chart.getLegend().setItemFont(sfont);
+            	chart.getLegend().setItemFont(font);
 
 			chart.draw(g2d, r2d);
 			g2d.dispose();
