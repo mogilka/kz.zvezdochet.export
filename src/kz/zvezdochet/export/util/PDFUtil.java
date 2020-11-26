@@ -149,7 +149,7 @@ public class PDFUtil {
 	/**
 	 * Цвет позитивных сообщений
 	 */
-	public static BaseColor FONTGREEN = new BaseColor(0, 102, 51);
+	public static BaseColor FONTCOLORGREEN = new BaseColor(0, 102, 51);
 	/**
 	 * Цвет нейтральных сообщений
 	 */
@@ -1085,7 +1085,7 @@ public class PDFUtil {
 	 */
 	public static Font getSuccessFont() throws DocumentException, IOException {
 		BaseFont baseFont = getBaseFont();
-		return new Font(baseFont, 12, Font.NORMAL, FONTGREEN);
+		return new Font(baseFont, 12, Font.NORMAL, FONTCOLORGREEN);
 	}
 
     /**
