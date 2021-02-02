@@ -339,6 +339,8 @@ public class PDFUtil {
 	    	return "Женщина";
 	    else if (type.equals("child"))
 	    	return "Ребёнок";
+	    else if (type.equals("children"))
+	    	return "Дети";
 	    else if (type.equals("health"))
 	    	return "Здоровье";
 	    else if (type.equals("love"))
@@ -1397,7 +1399,7 @@ public class PDFUtil {
 			TextGender gender = dict.getGenderText(type);
 			if (null == gender)
 				return null;
-			
+
 			phrase.add(Chunk.NEWLINE);
 			Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType()), getSubheaderFont());
 			phrase.add(p);
