@@ -37,6 +37,7 @@ import org.jfree.chart.renderer.category.LineAndShapeRenderer;
 import org.jfree.chart.renderer.category.StackedBarRenderer;
 import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.chart.title.TextTitle;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.category.IntervalCategoryDataset;
@@ -435,6 +436,7 @@ public class PDFUtil {
 	 * Генерация столбцовых диаграмм
 	 * @param writer обработчик генерации PDF-файла
 	 * @param title заголовок диаграммы
+	 * @param subtitle подзаголовок диаграммы
 	 * @param cattitle заголовок категории
 	 * @param valtitle заголовок значения
 	 * @param bars массив значений
@@ -445,7 +447,7 @@ public class PDFUtil {
 	 * @param customColors true|false цвета серий брать из массива значений|цвета по умолчанию
 	 * @return изображение диаграммы Image|PdfTable
 	 */
-	public static Element printBars(PdfWriter writer, String title, String cattitle, String valtitle, Bar[] bars, 
+	public static Element printBars(PdfWriter writer, String title, String subtitle, String cattitle, String valtitle, Bar[] bars, 
 			float width, float height, boolean legend, boolean vertical, boolean customColors) {
 		if (!OsUtil.getOS().equals(OsUtil.OS.LINUX))
 			return printTableChart(writer, bars, title, false);
@@ -473,6 +475,10 @@ public class PDFUtil {
 
 			PlotOrientation orientation = vertical ? PlotOrientation.VERTICAL : PlotOrientation.HORIZONTAL;
 		    JFreeChart chart = ChartFactory.createBarChart(title, cattitle, valtitle, dataset, orientation, legend, true, false);
+		    if (subtitle != null) {
+			    TextTitle sub = new TextTitle(subtitle, new java.awt.Font(fontname, java.awt.Font.PLAIN, 10));
+			    chart.addSubtitle(sub);
+		    }
             java.awt.Font font = new java.awt.Font(fontname, java.awt.Font.PLAIN, 12);
             chart.getTitle().setFont(font);
 
@@ -793,11 +799,10 @@ public class PDFUtil {
 				if (!health && gender.getType().equals("health"))
 					continue;
 				Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType()), getSubheaderFont());
-				p.setSpacingBefore(10);
 				section.add(p);
 				section.add(new Paragraph(removeTags(gender.getText(), getRegularFont())));
+				section.add(Chunk.NEWLINE);
 			};
-			section.add(Chunk.NEWLINE);
 		}
 	}
 
