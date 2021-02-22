@@ -799,9 +799,11 @@ public class PDFUtil {
 				if (!health && gender.getType().equals("health"))
 					continue;
 				Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType()), getSubheaderFont());
+				p.setSpacingBefore(10);
 				section.add(p);
-				section.add(new Paragraph(removeTags(gender.getText(), getRegularFont())));
-				section.add(Chunk.NEWLINE);
+				p = new Paragraph(removeTags(gender.getText(), getRegularFont()));
+				p.setSpacingAfter(10);
+				section.add(p);
 			};
 		}
 	}
