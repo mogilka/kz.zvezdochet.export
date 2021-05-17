@@ -26,6 +26,7 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.axis.DateAxis;
+import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PiePlot;
 import org.jfree.chart.plot.PlotOrientation;
@@ -761,6 +762,7 @@ public class PDFUtil {
             plot.setBackgroundPaint(new java.awt.Color(230, 230, 250));
             java.awt.Font sfont = new java.awt.Font(fontname, java.awt.Font.PLAIN, 10);
             plot.getDomainAxis().setLabelFont(sfont);
+            plot.getDomainAxis().setStandardTickUnits(NumberAxis.createIntegerTickUnits());
             plot.getRangeAxis().setLabelFont(sfont);
 
             XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
@@ -1368,6 +1370,7 @@ public class PDFUtil {
             CategoryAxis axis = plot.getDomainAxis();
             axis.setLabelFont(sfont);
             plot.getRangeAxis().setLabelFont(sfont);
+//            plot.setColumnRenderingOrder(SortOrder.ASCENDING);
 
             int count = dataset.getColumnCount();
             if (count > 5)
@@ -1382,6 +1385,8 @@ public class PDFUtil {
             	chart.getLegend().setItemFont(sfont);
             else
             	chart.getLegend().setVisible(false);
+
+            //ChartUtilities.saveChartAsJPEG(lineChart ,lineChartObject, width ,height);
 
 			chart.draw(g2d, r2d);
 			g2d.dispose();
