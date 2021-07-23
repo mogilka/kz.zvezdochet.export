@@ -1188,7 +1188,7 @@ public class PDFUtil {
 	 * @return массив частей текста
 	 */
 	public static List<String> splitHtml(String html) {
-		int LIMIT = 2220;
+		int LIMIT = 2120;
 		List<String> parts = new ArrayList<String>();
 		if (html.length() <= LIMIT) {
 			parts.add(html);
