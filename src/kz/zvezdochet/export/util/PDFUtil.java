@@ -801,7 +801,7 @@ public class PDFUtil {
 				if (!health && gender.getType().equals("health"))
 					continue;
 				Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType()), getSubheaderFont());
-				p.setSpacingBefore(10);
+				p.setSpacingBefore(20);
 				section.add(p);
 				p = new Paragraph(removeTags(gender.getText(), getRegularFont()));
 				p.setSpacingAfter(10);
@@ -1149,6 +1149,7 @@ public class PDFUtil {
 			for (TextGender gender : genders) {
 				if (!health && gender.getType().equals("health"))
 					continue;
+				phrase.add(Chunk.NEWLINE);
 				Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType()), getSubheaderFont());
 				phrase.add(p);
 				phrase.add(Chunk.NEWLINE);
@@ -1446,7 +1447,6 @@ public class PDFUtil {
 				Paragraph p = new Paragraph(header, getSubheaderFont());
 				section.add(p);
 			}
-			section.add(Chunk.NEWLINE);
 			String html = gender.getText();
 			section.add(new Paragraph(removeTags(html, getRegularFont())));
 			section.add(Chunk.NEWLINE);
