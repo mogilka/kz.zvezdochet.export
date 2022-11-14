@@ -351,6 +351,10 @@ public class PDFUtil {
 	    	return "Семья";
 	    else if (type.equals("deal"))
 	    	return "Сотрудничество";
+	    else if (type.equals("man"))
+	    	return "Мужчина";
+	    else if (type.equals("woman"))
+	    	return "Женщина";
 	    else
 	    	return "";
 	}
