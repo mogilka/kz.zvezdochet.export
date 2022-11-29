@@ -54,7 +54,7 @@ public class PageEventHandler implements PdfPageEvent {
 			PdfContentByte cb = writer.getDirectContent();
 			Font fonth = new Font(baseFont, 10, Font.NORMAL, new BaseColor(153, 153, 153));
 			float x = (document.right() - document.left()) / 2 + document.leftMargin();
-	        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase("Астролог Наталья Звездочёт", fonth),
+	        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase(lang.equals("ru") ? "Астролог Наталья Звездочёт" : "Astrologer Natalie Stargazer", fonth),
 	        	x, document.top() + 10, 0);
 	        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase(String.valueOf(writer.getPageNumber()), fonth),
 	        	x, document.bottom() - 15, 0);
@@ -92,5 +92,18 @@ public class PageEventHandler implements PdfPageEvent {
 
 	public Map<String, Integer> getPageByTitle() {
 		return pageByTitle;
+	}
+
+	/**
+	 * Язык колонтитула
+	 */
+	private String lang = "ru";
+
+	/**
+	 * Установка языка колонтитула
+	 * @param lang язык ru|en
+	 */
+	public void setLang(String lang) {
+		this.lang = lang;
 	}
 }

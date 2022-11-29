@@ -159,9 +159,11 @@ public class PDFUtil {
 
 	/**
 	 * Отображение информации о копирайте
+	 * @param lang язык ru|en
 	 * @return Paragraph абзац
 	 */
-	public static Paragraph printCopyright() {
+	public static Paragraph printCopyright(String lang) {
+		boolean rus = lang.equals("ru");
         Paragraph p = new Paragraph();
 		try {
 			BaseFont baseFont = getBaseFont();
@@ -169,13 +171,13 @@ public class PDFUtil {
 			Font fonta = new Font(baseFont, 10, Font.UNDERLINE, FONTCOLOR);
 
 	        p.setAlignment(Element.ALIGN_CENTER);
-	        Chunk chunk = new Chunk("© 2014-" + Calendar.getInstance().get(Calendar.YEAR) + " Астролог ", font);
+	        Chunk chunk = new Chunk("© 2014-" + Calendar.getInstance().get(Calendar.YEAR) + (rus ? " Астролог " : " Astrologer "), font);
 	        p.add(chunk);
-	        chunk = new Chunk("Наталья Звездочёт", fonta);
-	        chunk.setAnchor(WEBSITE);
+	        chunk = new Chunk(getAuthor(lang), fonta);
+	        chunk.setAnchor(getWebsite(lang));
 	        p.add(chunk);
 	        p.add(Chunk.NEWLINE);
-	        p.add(new Chunk("Все права защищены", font));
+	        p.add(new Chunk(rus ? "Все права защищены" : "All rights reserved", font));
 		} catch (Exception e) {
 		    e.printStackTrace();
 		}
@@ -225,20 +227,38 @@ public class PDFUtil {
 		return new Font(baseFont, 14, Font.BOLD, FONTCOLOR);
 	}
 
-	public static String AUTHOR = "Наталья Звездочёт";
-	public static String WEBSITE = "https://zvezdochet.guru";
+	/**
+	 * Поиск автора
+	 * @param lang язык ru|en
+	 * @return имя автора
+	 */
+	public static String getAuthor(String lang) {
+		return lang.equals("ru") ? "Наталья Звездочёт" : "Natalie Stargazer";
+	}
+
+	/**
+	 * Поиск веб-сайта
+	 * @param lang язык ru|en
+	 * @return URL сайта
+	 */
+	public static String getWebsite(String lang) {
+		return "https://zvezdochet.guru/" + lang;
+	}
 
 	/**
 	 * Поиск метаданных по умолчанию
 	 * @param doc документ
 	 * @param title название документа
+	 * @param lang язык ru|en
 	 */
-	public static void getMetaData(Document doc, String title) {
+	public static void getMetaData(Document doc, String title, String lang) {
+		boolean rus = lang.equals("ru");
         doc.addTitle(title);
         doc.addSubject(title);
-        doc.addKeywords("гороскоп, прогноз, звездочёт, натальная астрология, сидерическая астрология");
-        doc.addAuthor(AUTHOR);
-        doc.addCreator(AUTHOR);
+        doc.addKeywords(rus ? "гороскоп, прогноз, звездочёт, сидерическая астрология" : "horoscope, forecast, stargazer, sidereal astrology");
+        String author = getAuthor(lang);
+        doc.addAuthor(author);
+        doc.addCreator(author);
         doc.addCreationDate();
 	}
 
@@ -332,29 +352,31 @@ public class PDFUtil {
 	/**
 	 * Поиск заголовка для гендерного текста
 	 * @param type тип толкования
+	 * @param lang язык ru|en
 	 * @return заголовок
 	 */
-	public static String getGenderHeader(String type) {
+	public static String getGenderHeader(String type, String lang) {
+		boolean rus = lang.equals("ru");
 	    if (type.equals("male"))
-	    	return "Мужчина";
+	    	return rus ? "Мужчина" : "Man";
 	    else if (type.equals("female"))
-	    	return "Женщина";
+	    	return rus ? "Женщина" : "Woman";
 	    else if (type.equals("child"))
-	    	return "Ребёнок";
+	    	return rus ? "Ребёнок" : "Child";
 	    else if (type.equals("children"))
-	    	return "Дети";
+	    	return rus ? "Дети" : "Children";
 	    else if (type.equals("health"))
-	    	return "Здоровье";
+	    	return rus ? "Здоровье" : "Health";
 	    else if (type.equals("love"))
-	    	return "Любовь";
+	    	return rus ? "Любовь" : "Love";
 	    else if (type.equals("family"))
-	    	return "Семья";
+	    	return rus ? "Семья" : "Family";
 	    else if (type.equals("deal"))
-	    	return "Сотрудничество";
+	    	return rus ? "Сотрудничество" : "Business";
 	    else if (type.equals("man"))
-	    	return "Мужчина";
+	    	return rus ? "Мужчина" : "Man";
 	    else if (type.equals("woman"))
-	    	return "Женщина";
+	    	return rus ? "Женщина" : "Woman";
 	    else
 	    	return "";
 	}
@@ -795,16 +817,17 @@ public class PDFUtil {
 	 * @param female true|false женщина|мужчина
 	 * @param child true|false ребёнок|взрослый
 	 * @param health true - использовать толкование о здоровье
-	 * @throws IOException 
+	 * @param lang язык ru|en
+	 * @throws IOException
 	 * @throws DocumentException 
 	 */
-	public static void printGender(Section section, ITextGender dict, boolean female, boolean child, boolean health) throws DocumentException, IOException {
+	public static void printGender(Section section, ITextGender dict, boolean female, boolean child, boolean health, String lang) throws DocumentException, IOException {
 		if (dict != null) {
 			List<TextGender> genders = dict.getGenderTexts(female, child);
 			for (TextGender gender : genders) {
 				if (!health && gender.getType().equals("health"))
 					continue;
-				Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType()), getSubheaderFont());
+				Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType(), lang), getSubheaderFont());
 				p.setSpacingBefore(20);
 				section.add(p);
 				p = new Paragraph(removeTags(gender.getText(), getRegularFont()));
@@ -1142,11 +1165,12 @@ public class PDFUtil {
 	 * @param female true|false женщина|мужчина
 	 * @param child true|false ребёнок|взрослый
 	 * @param health true - использовать толкование о здоровье
+	 * @param lang язык ru|en
 	 * @return Phrase фраза
 	 * @throws IOException 
 	 * @throws DocumentException 
 	 */
-	public static Phrase printGenderCell(ITextGender dict, boolean female, boolean child, boolean health) throws DocumentException, IOException {
+	public static Phrase printGenderCell(ITextGender dict, boolean female, boolean child, boolean health, String lang) throws DocumentException, IOException {
 		if (dict != null) {
 			Phrase phrase = new Phrase();
 			List<TextGender> genders = dict.getGenderTexts(female, child);
@@ -1154,7 +1178,7 @@ public class PDFUtil {
 				if (!health && gender.getType().equals("health"))
 					continue;
 				phrase.add(Chunk.NEWLINE);
-				Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType()), getSubheaderFont());
+				Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType(), lang), getSubheaderFont());
 				phrase.add(p);
 				phrase.add(Chunk.NEWLINE);
 				phrase.add(Chunk.NEWLINE);
@@ -1305,7 +1329,7 @@ public class PDFUtil {
 		return PlatformUtil.getPath(Activator.PLUGIN_ID, "/font").getPath();
 	}
 
-	public static void printTOC(Document document, PageEventHandler handler) throws DocumentException {
+	public static void printTOC(Document document, PageEventHandler handler, String lang) throws DocumentException {
 		try {
 	        Chapter intro = new Chapter(printHeader(new Paragraph(), "Содержание", null), 0);
 	        intro.setNumberDepth(0);
@@ -1406,11 +1430,12 @@ public class PDFUtil {
 	 * Генерация толкования по типу в виде фразы для табличной ячейки
 	 * @param dict справочник
 	 * @param type love|deal
+	 * @param lang язык ru|en
 	 * @return Phrase фраза
 	 * @throws IOException 
 	 * @throws DocumentException 
 	 */
-	public static Phrase printGenderCell(ITextGender dict, String type) throws DocumentException, IOException {
+	public static Phrase printGenderCell(ITextGender dict, String type, String lang) throws DocumentException, IOException {
 		if (dict != null) {
 			Phrase phrase = new Phrase();
 			TextGender gender = dict.getGenderText(type);
@@ -1418,7 +1443,7 @@ public class PDFUtil {
 				return null;
 
 			phrase.add(Chunk.NEWLINE);
-			Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType()), getSubheaderFont());
+			Paragraph p = new Paragraph(PDFUtil.getGenderHeader(gender.getType(), lang), getSubheaderFont());
 			phrase.add(p);
 			phrase.add(Chunk.NEWLINE);
 			phrase.add(Chunk.NEWLINE);
@@ -1435,17 +1460,18 @@ public class PDFUtil {
 	 * @param section раздел
 	 * @param dict справочник
 	 * @param type love|deal
+	 * @param lang язык ru|en
 	 * @return Phrase фраза
 	 * @throws IOException 
 	 * @throws DocumentException 
 	 */
-	public static void printGender(Section section, ITextGender dict, String type) throws DocumentException, IOException {
+	public static void printGender(Section section, ITextGender dict, String type, String lang) throws DocumentException, IOException {
 		if (dict != null) {
 			TextGender gender = dict.getGenderText(type);
 			if (null == gender)
 				return;
 
-			String header = PDFUtil.getGenderHeader(gender.getType());
+			String header = PDFUtil.getGenderHeader(gender.getType(), lang);
 			if (!header.isEmpty()) {
 				section.add(Chunk.NEWLINE);
 				Paragraph p = new Paragraph(header, getSubheaderFont());
@@ -1951,5 +1977,20 @@ public class PDFUtil {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	/**
+	 * Поиск цветов главных стихий
+	 * @return массив цветов
+	 * @throws IOException 
+	 * @throws DocumentException 
+	 */
+	public static Font[] getElementFonts() throws DocumentException, IOException {
+		return new Font[] {
+			getDangerFont(),
+			getSuccessFont(),
+			getWarningFont(),
+			getNeutralFont()
+		};
 	}
 }
