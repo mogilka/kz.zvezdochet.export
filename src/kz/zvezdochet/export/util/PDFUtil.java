@@ -1369,6 +1369,7 @@ public class PDFUtil {
 	 * @param height высота диаграммы
 	 * @param legend true|false присутствие|отсутствие легенды
 	 * @return изображение диаграммы
+	 * @link http://www.java2s.com/Code/Java/Chart/JFreeChartLineChartDemo5showingtheuseofacustomdrawingsupplier.htm
 	 */
 	public static Image printLineChart(PdfWriter writer, String title, String cattitle, String valtitle, CategoryDataset dataset, float width, float height, boolean legend) {
 		try {
@@ -1405,9 +1406,20 @@ public class PDFUtil {
             if (count > 5)
             	axis.setCategoryLabelPositions(CategoryLabelPositions.UP_90);
 
+            count = dataset.getRowCount();
             LineAndShapeRenderer renderer = new LineAndShapeRenderer();
-            for (int i = 0; i < count; i++)
-            	renderer.setSeriesStroke(i, new BasicStroke(4.0f));
+            for (int i = 0; i < count; i++) {
+            	String key = dataset.getRowKey(i).toString();
+//            	if (key.equals("Pluto"))
+//            		System.out.println();
+            	if (key.contains("–") || key.contains("+"))
+            		renderer.setSeriesStroke(i,
+           	            new BasicStroke(
+           	            	4.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND,
+            	            1.0f, new float[] {2.0f, 6.0f}, 0.0f));
+            	else
+            		renderer.setSeriesStroke(i, new BasicStroke(4.0f));
+            }
             plot.setRenderer(renderer);
 
             if (legend)
